@@ -30,24 +30,31 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify({
           contents: [{
             parts: [{
-              text: `You are an expert art director creating prompts for AI image generation. Create a single, vivid, detailed image prompt for a stunning 16:9 widescreen artwork.
+              text: `You are a world-class cinematographer and fine art photographer creating a prompt for Imagen 4 AI. Your goal is to create an EXTRAORDINARY, BREATHTAKING image that could hang in a prestigious gallery or win photography awards.
 
-Style: ${style}
-Subject: ${subject}
+STYLE DIRECTION: ${style}
+SUBJECT/THEME: ${subject}
 
-Requirements:
-- Create a unique, imaginative scene that would look breathtaking on a Samsung Frame TV
-- Include specific details: lighting conditions, atmosphere, textures, colors, mood
-- Use cinematic composition techniques for the wide 16:9 format
-- Make it visually striking and emotionally evocative
-- Include quality modifiers like "4K, HDR, masterfully detailed"
+CREATE A DETAILED PROMPT THAT SPECIFIES:
 
-Respond with ONLY the image prompt, no explanations or quotes. Keep it under 200 words.`
+1. EXACT SCENE COMPOSITION - Describe the precise arrangement of elements, foreground/midground/background layers, leading lines, rule of thirds placement
+
+2. LIGHTING MASTERY - Specify exact lighting: golden hour sun rays, volumetric god rays, rim lighting, chiaroscuro, bioluminescence, dramatic shadows, light temperature (warm/cool)
+
+3. ATMOSPHERE & MOOD - Dense atmosphere, fog, mist, dust particles in light beams, weather conditions, time of day, emotional tone
+
+4. TECHNICAL CAMERA DETAILS - Lens type (35mm, 50mm, 85mm portrait, wide angle), aperture for bokeh (f/1.4, f/2.8), depth of field, motion blur, focus point
+
+5. TEXTURE & DETAIL - Intricate surface details, material qualities (wet, reflective, matte, glossy), fabric textures, skin pores, environmental textures
+
+6. COLOR PALETTE - Specific color scheme, complementary colors, color grading (teal and orange, moody blues, warm earth tones)
+
+OUTPUT: Write ONE continuous, vivid prompt. NO explanations. NO quotes. Be SPECIFIC and SENSORY. Make every word count. 150-250 words.`
             }]
           }],
           generationConfig: {
-            temperature: 1.0,
-            maxOutputTokens: 300,
+            temperature: 1.2,
+            maxOutputTokens: 400,
           },
         }),
       }
