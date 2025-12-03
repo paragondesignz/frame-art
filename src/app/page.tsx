@@ -9,7 +9,13 @@ import PreviewPanel from '@/components/PreviewPanel';
 import Lightbox from '@/components/Lightbox';
 import ImageLibrary from '@/components/ImageLibrary';
 import { ArtStyle, GeneratedImage } from '@/types';
-import { Tv, Sparkles } from 'lucide-react';
+import { Tv, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+
+interface GenerationInfo {
+  prompt: string;
+  style: string;
+  userInput: string;
+}
 
 export default function Home() {
   const [selectedStyle, setSelectedStyle] = useState<ArtStyle | null>(null);
@@ -19,6 +25,8 @@ export default function Home() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [savedImages, setSavedImages] = useState<GeneratedImage[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [lastGeneration, setLastGeneration] = useState<GenerationInfo | null>(null);
+  const [promptExpanded, setPromptExpanded] = useState(false);
 
   // Load saved images on mount
   useEffect(() => {
@@ -62,6 +70,14 @@ export default function Home() {
       // Create data URL from base64
       const imageUrl = `data:image/png;base64,${data.imageBase64}`;
       setCurrentImage(imageUrl);
+
+      // Store generation info
+      setLastGeneration({
+        prompt: data.prompt,
+        style: selectedStyle.name,
+        userInput: userPrompt || '(none)',
+      });
+      setPromptExpanded(false);
 
       // Save to library
       const saveResponse = await fetch('/api/images', {
@@ -184,6 +200,43 @@ export default function Home() {
                 className="mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm"
               >
                 {error}
+              </motion.div>
+            )}
+
+            {/* Generation Info - Collapsible */}
+            {lastGeneration && currentImage && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 bg-surface rounded-xl border border-border overflow-hidden"
+              >
+                <button
+                  onClick={() => setPromptExpanded(!promptExpanded)}
+                  className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-white/5 transition-colors"
+                >
+                  <span className="text-sm font-medium text-foreground">Generation Details</span>
+                  {promptExpanded ? (
+                    <ChevronUp className="w-4 h-4 text-muted" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-muted" />
+                  )}
+                </button>
+                {promptExpanded && (
+                  <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
+                    <div>
+                      <p className="text-xs text-muted mb-1">Style</p>
+                      <p className="text-sm text-foreground">{lastGeneration.style}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted mb-1">Your Input</p>
+                      <p className="text-sm text-foreground">{lastGeneration.userInput}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted mb-1">AI-Crafted Prompt</p>
+                      <p className="text-sm text-foreground/80 leading-relaxed">{lastGeneration.prompt}</p>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             )}
           </div>
