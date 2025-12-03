@@ -19,14 +19,54 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build a stunning prompt following Imagen 4 best practices
-    // Structure: Subject + Context + Style + Quality modifiers
-    const subject = userPrompt?.trim() || 'majestic mountain peaks reflected in a crystal-clear alpine lake at golden hour';
+    // Step 1: Use Gemini to craft a unique, detailed prompt
+    const subject = userPrompt?.trim() || 'a stunning scene perfect for display as wall art';
 
-    // Craft prompt with vivid descriptive language and technical excellence
-    const detailedPrompt = `${subject}, ${style}, sweeping widescreen cinematic composition, extraordinary detail and clarity, dramatic volumetric lighting with rich shadows and luminous highlights, deep atmospheric perspective, vibrant yet sophisticated color palette, 4K ultra high definition, photorealistic quality, award-winning professional artwork, masterful execution`;
+    const promptCraftingRequest = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `You are an expert art director creating prompts for AI image generation. Create a single, vivid, detailed image prompt for a stunning 16:9 widescreen artwork.
 
-    // Imagen 4 API
+Style: ${style}
+Subject: ${subject}
+
+Requirements:
+- Create a unique, imaginative scene that would look breathtaking on a Samsung Frame TV
+- Include specific details: lighting conditions, atmosphere, textures, colors, mood
+- Use cinematic composition techniques for the wide 16:9 format
+- Make it visually striking and emotionally evocative
+- Include quality modifiers like "4K, HDR, masterfully detailed"
+
+Respond with ONLY the image prompt, no explanations or quotes. Keep it under 200 words.`
+            }]
+          }],
+          generationConfig: {
+            temperature: 1.0,
+            maxOutputTokens: 300,
+          },
+        }),
+      }
+    );
+
+    if (!promptCraftingRequest.ok) {
+      throw new Error('Failed to craft prompt');
+    }
+
+    const promptData = await promptCraftingRequest.json();
+    const craftedPrompt = promptData.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+    if (!craftedPrompt) {
+      throw new Error('No prompt generated');
+    }
+
+    console.log('Crafted prompt:', craftedPrompt);
+
+    // Step 2: Generate image with Imagen 4
     const response = await fetch(
       'https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict',
       {
@@ -38,7 +78,7 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify({
           instances: [
             {
-              prompt: detailedPrompt,
+              prompt: craftedPrompt,
             },
           ],
           parameters: {
@@ -75,7 +115,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       imageBase64,
-      prompt: `${style} - ${subject}`,
+      prompt: craftedPrompt,
     });
   } catch (error) {
     console.error('Generate error:', error);
