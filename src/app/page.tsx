@@ -129,9 +129,9 @@ export default function Home() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Main App Section - Settings Left, Preview Right */}
-        <div className="grid lg:grid-cols-[minmax(300px,400px),1fr] gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-[350px,1fr] lg:grid-cols-[400px,1fr] gap-6 lg:gap-8 mb-12">
           {/* Left Column - Settings */}
-          <div className="space-y-6">
+          <div className="space-y-6 order-2 md:order-1">
             {/* Create Artwork Panel */}
             <div className="bg-surface rounded-xl p-6 border border-border">
               <div className="flex items-center gap-2 mb-4">
@@ -188,7 +188,7 @@ export default function Home() {
           </div>
 
           {/* Right Column - Preview */}
-          <div className="lg:sticky lg:top-8 lg:self-start">
+          <div className="order-1 md:order-2 md:sticky md:top-8 md:self-start">
             <PreviewPanel
               imageUrl={currentImage}
               isLoading={isGenerating}
