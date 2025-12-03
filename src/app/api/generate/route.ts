@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 1: Use Gemini to craft a unique, detailed prompt
-    const subject = userPrompt?.trim() || 'a stunning scene perfect for display as wall art';
+    const subject = userPrompt?.trim() || 'a beautiful and captivating scene';
 
     const promptCraftingRequest = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify({
           contents: [{
             parts: [{
-              text: `You are a world-class art director creating an image prompt for Imagen 4 AI. Your goal: create a STUNNING, AWARD-WINNING 16:9 artwork for display on a Samsung Frame TV.
+              text: `You are a world-class art director creating an image prompt for Imagen 4 AI. Your goal: create a STUNNING, AWARD-WINNING 16:9 artwork.
 
 ARTISTIC STYLE: ${style}
 SUBJECT/THEME: ${subject}
