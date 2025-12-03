@@ -128,28 +128,11 @@ export default function Home() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Main App Section */}
-        <div className="grid lg:grid-cols-[1fr,400px] gap-8 mb-12">
-          {/* Preview Panel */}
-          <div className="order-1 lg:order-1">
-            <PreviewPanel
-              imageUrl={currentImage}
-              isLoading={isGenerating}
-              onClick={() => currentImage && setLightboxOpen(true)}
-            />
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm"
-              >
-                {error}
-              </motion.div>
-            )}
-          </div>
-
-          {/* Controls Sidebar */}
-          <div className="order-2 lg:order-2 space-y-6">
+        {/* Main App Section - Settings Left, Preview Right */}
+        <div className="grid lg:grid-cols-[minmax(300px,400px),1fr] gap-8 mb-12">
+          {/* Left Column - Settings */}
+          <div className="space-y-6">
+            {/* Create Artwork Panel */}
             <div className="bg-surface rounded-xl p-6 border border-border">
               <div className="flex items-center gap-2 mb-4">
                 <Sparkles className="w-5 h-5 text-accent" />
@@ -174,9 +157,20 @@ export default function Home() {
 
               {!selectedStyle && (
                 <p className="text-xs text-muted mt-3 text-center">
-                  Select an art style below to start
+                  Select a style below to start
                 </p>
               )}
+            </div>
+
+            {/* Style Selector */}
+            <div className="bg-surface rounded-xl p-6 border border-border">
+              <h2 className="font-display text-lg font-semibold mb-4 text-foreground">
+                Choose Style
+              </h2>
+              <StyleSelector
+                selectedStyle={selectedStyle}
+                onSelectStyle={setSelectedStyle}
+              />
             </div>
 
             {/* Selected Style Display */}
@@ -192,18 +186,25 @@ export default function Home() {
               </motion.div>
             )}
           </div>
-        </div>
 
-        {/* Style Selector Section */}
-        <section className="mb-12">
-          <h2 className="font-display text-xl font-semibold mb-4 text-foreground">
-            Choose Your Style
-          </h2>
-          <StyleSelector
-            selectedStyle={selectedStyle}
-            onSelectStyle={setSelectedStyle}
-          />
-        </section>
+          {/* Right Column - Preview */}
+          <div className="lg:sticky lg:top-8 lg:self-start">
+            <PreviewPanel
+              imageUrl={currentImage}
+              isLoading={isGenerating}
+              onClick={() => currentImage && setLightboxOpen(true)}
+            />
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm"
+              >
+                {error}
+              </motion.div>
+            )}
+          </div>
+        </div>
 
         {/* Divider */}
         <div className="border-t border-border my-8" />

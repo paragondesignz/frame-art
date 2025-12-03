@@ -30,21 +30,22 @@ export async function POST(request: NextRequest) {
     // Add aspect ratio and quality hints
     prompt += ', high quality, detailed, 16:9 aspect ratio artwork for Samsung Frame TV display';
 
-    // Call Imagen 4 API
+    // Use Gemini's image generation model
     const response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict',
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
         },
         body: JSON.stringify({
-          instances: [{ prompt }],
-          parameters: {
-            sampleCount: 1,
-            aspectRatio: '16:9',
-            personGeneration: 'allow_adult',
+          contents: [
+            {
+              parts: [{ text: `Generate an image: ${prompt}` }],
+            },
+          ],
+          generationConfig: {
+            responseModalities: ['IMAGE', 'TEXT'],
           },
         }),
       }
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Imagen API error:', errorText);
+      console.error('Gemini API error:', errorText);
       return NextResponse.json(
         { error: 'Failed to generate image', details: errorText },
         { status: response.status }
@@ -61,14 +62,25 @@ export async function POST(request: NextRequest) {
 
     const data = await response.json();
 
-    if (!data.generated_images || data.generated_images.length === 0) {
+    // Extract image from Gemini response
+    let imageBase64: string | undefined;
+
+    if (data.candidates && data.candidates[0]?.content?.parts) {
+      for (const part of data.candidates[0].content.parts) {
+        if (part.inlineData?.data) {
+          imageBase64 = part.inlineData.data;
+          break;
+        }
+      }
+    }
+
+    if (!imageBase64) {
+      console.error('No image in response:', JSON.stringify(data, null, 2));
       return NextResponse.json(
-        { error: 'No image generated' },
+        { error: 'No image generated', details: 'Model did not return an image' },
         { status: 500 }
       );
     }
-
-    const imageBase64 = data.generated_images[0].image.imageBytes;
 
     return NextResponse.json({
       imageBase64,
