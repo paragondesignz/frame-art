@@ -173,6 +173,78 @@ export const artStyles: ArtStyle[] = [
     promptPrefix: 'Neon noir style, dark moody atmosphere, neon light accents, cinematic shadows',
   },
 
+  // Modern Fine Art Styles
+  {
+    id: 'color-field',
+    name: 'Color Field',
+    category: 'fine-art',
+    description: 'Large planes of color, Rothko-inspired',
+    promptPrefix: 'Color Field painting in the style of Mark Rothko, luminous rectangular color planes with soft edges, transcendent and meditative, subtle color gradations, spiritual depth through pure color relationships, museum-quality fine art',
+  },
+  {
+    id: 'hard-edge',
+    name: 'Hard Edge',
+    category: 'fine-art',
+    description: 'Sharp geometric boundaries',
+    promptPrefix: 'Hard Edge painting style, crisp precise geometric shapes with razor-sharp boundaries, flat unmodulated color areas, bold color contrasts, Ellsworth Kelly and Frank Stella inspired, pristine execution',
+  },
+  {
+    id: 'lyrical-abstraction',
+    name: 'Lyrical Abstraction',
+    category: 'fine-art',
+    description: 'Flowing, expressive forms',
+    promptPrefix: 'Lyrical Abstraction painting, flowing organic forms, expressive gestural marks, luminous washes of color, poetic and emotional, Helen Frankenthaler soak-stain technique, ethereal and graceful',
+  },
+  {
+    id: 'neo-expressionism',
+    name: 'Neo-Expressionism',
+    category: 'fine-art',
+    description: 'Raw, intense, Basquiat-style',
+    promptPrefix: 'Neo-Expressionist painting, raw emotional intensity, bold primitive marks, graffiti influences, Basquiat and Schnabel inspired, visceral energy, thick impasto textures, symbolic imagery, urban edge',
+  },
+  {
+    id: 'contemporary-realism',
+    name: 'Contemporary Realism',
+    category: 'fine-art',
+    description: 'Photorealistic modern subjects',
+    promptPrefix: 'Contemporary Realism painting, photorealistic precision with modern sensibility, hyperreal details, dramatic contemporary lighting, Chuck Close and Richard Estes inspired, technically masterful execution',
+  },
+  {
+    id: 'digital-fine-art',
+    name: 'Digital Fine Art',
+    category: 'fine-art',
+    description: 'High-end digital painting',
+    promptPrefix: 'Museum-quality digital fine art, sophisticated digital painting techniques, rich layered textures, contemporary digital masters style, exhibition-worthy digital artwork, refined and polished',
+  },
+  {
+    id: 'mixed-media',
+    name: 'Mixed Media',
+    category: 'fine-art',
+    description: 'Layered textures, collage',
+    promptPrefix: 'Mixed media fine art, layered collage textures, torn paper edges, paint drips over photographs, Robert Rauschenberg combines style, rich tactile surfaces, found object aesthetic',
+  },
+  {
+    id: 'conceptual-minimal',
+    name: 'Conceptual Minimal',
+    category: 'fine-art',
+    description: 'Idea-driven, spare aesthetic',
+    promptPrefix: 'Conceptual Minimalist art, spare and intentional, Donald Judd and Sol LeWitt inspired, pure form and idea, industrial materials aesthetic, gallery white space, intellectual rigor',
+  },
+  {
+    id: 'new-media',
+    name: 'New Media Art',
+    category: 'fine-art',
+    description: 'Technology-inspired aesthetics',
+    promptPrefix: 'New Media digital art, technology-inspired contemporary aesthetics, data visualization beauty, generative art patterns, TeamLab and Refik Anadol inspired, immersive digital experience',
+  },
+  {
+    id: 'process-art',
+    name: 'Process Art',
+    category: 'fine-art',
+    description: 'Evidence of creation visible',
+    promptPrefix: 'Process Art style, visible evidence of artistic creation, drips and splatters, Pollock action painting energy, spontaneous mark-making, raw creative process captured, authentic and unpolished',
+  },
+
   // Photography Styles
   {
     id: 'cinematic',
@@ -263,6 +335,7 @@ export const artStyles: ArtStyle[] = [
 export const categories = [
   { id: 'all', name: 'All Styles' },
   { id: 'classic', name: 'Classic Fine Art' },
+  { id: 'fine-art', name: 'Modern Fine Art' },
   { id: 'modern', name: 'Modern & Digital' },
   { id: 'photography', name: 'Photography' },
 ] as const;

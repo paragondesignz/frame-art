@@ -1,7 +1,7 @@
 export interface ArtStyle {
   id: string;
   name: string;
-  category: 'classic' | 'modern' | 'photography';
+  category: 'classic' | 'modern' | 'photography' | 'fine-art';
   description: string;
   promptPrefix: string;
 }
