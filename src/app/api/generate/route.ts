@@ -19,19 +19,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build a vivid, cinematic prompt for stunning artwork
-    const subject = userPrompt?.trim() || 'a breathtaking natural landscape at golden hour';
+    // Build a stunning prompt following Imagen 4 best practices
+    // Structure: Subject + Context + Style + Quality modifiers
+    const subject = userPrompt?.trim() || 'majestic mountain peaks reflected in a crystal-clear alpine lake at golden hour';
 
-    // Craft an evocative, detailed prompt that inspires stunning imagery
-    const detailedPrompt = `${style}
-
-Scene: ${subject}
-
-Render this as a breathtaking, museum-quality artwork with extraordinary attention to detail.
-The composition should be cinematic and sweeping, making full use of the wide frame.
-Include rich atmospheric depth, dramatic interplay of light and shadow, and vivid yet harmonious colors.
-Every element should feel intentional and masterfully executed, worthy of display in a prestigious gallery.
-The mood should be captivating and emotionally resonant, drawing the viewer into the scene.`;
+    // Craft prompt with vivid descriptive language and technical excellence
+    const detailedPrompt = `${subject}, ${style}, sweeping widescreen cinematic composition, extraordinary detail and clarity, dramatic volumetric lighting with rich shadows and luminous highlights, deep atmospheric perspective, vibrant yet sophisticated color palette, 4K ultra high definition, photorealistic quality, award-winning professional artwork, masterful execution`;
 
     // Imagen 4 API
     const response = await fetch(
