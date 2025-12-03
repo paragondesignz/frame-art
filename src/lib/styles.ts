@@ -300,7 +300,7 @@ export const artStyles: ArtStyle[] = [
     name: 'Landscape',
     category: 'photography',
     description: 'Scenic natural beauty',
-    promptPrefix: 'Epic landscape photography, Ansel Adams inspired composition, dramatic sky with volumetric clouds, foreground interest leading to distant peaks, hyperfocal distance sharpness throughout, polarized deep blue sky, National Geographic cover quality, grand sense of scale and wonder',
+    promptPrefix: 'Epic landscape photography, Peter Lik and Marc Adamus inspired, vibrant saturated colors, dramatic sky with volumetric clouds, foreground interest leading to distant peaks, hyperfocal distance sharpness throughout, polarized deep blue sky, golden hour warmth, National Geographic cover quality, grand sense of scale and wonder',
   },
   {
     id: 'long-exposure',
