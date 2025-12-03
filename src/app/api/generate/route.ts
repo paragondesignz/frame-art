@@ -22,45 +22,6 @@ export async function POST(request: NextRequest) {
     // Step 1: Use Gemini to craft a unique, detailed prompt
     const subject = userPrompt?.trim() || 'a stunning scene perfect for display as wall art';
 
-    // Detect if this is a minimalist/simple style
-    const isMinimalist = style.toLowerCase().includes('minimal') ||
-                         style.toLowerCase().includes('simple') ||
-                         style.toLowerCase().includes('clean');
-
-    const promptInstructions = isMinimalist
-      ? `You are creating a prompt for Imagen 4 AI in a MINIMALIST style.
-
-STYLE: ${style}
-SUBJECT: ${subject}
-
-MINIMALIST PRINCIPLES - Your prompt MUST emphasize:
-- Vast negative space and emptiness
-- Single focal point or very few elements
-- Clean, uncluttered composition
-- Subtle, muted color palette (or monochromatic)
-- Geometric simplicity
-- Zen-like calm and restraint
-- "Less is more" - every element must be essential
-
-DO NOT include: busy backgrounds, multiple subjects, intricate details, complex textures, dust particles, or visual clutter.
-
-OUTPUT: Write a SHORT, restrained prompt (50-80 words max). Simple. Clean. Breathe.`
-
-      : `You are a world-class cinematographer creating a prompt for Imagen 4 AI. Create an EXTRAORDINARY, BREATHTAKING image.
-
-STYLE: ${style}
-SUBJECT: ${subject}
-
-SPECIFY:
-1. COMPOSITION - Foreground/midground/background, leading lines, rule of thirds
-2. LIGHTING - Golden hour, volumetric rays, rim lighting, dramatic shadows, light temperature
-3. ATMOSPHERE - Fog, mist, weather, time of day, emotional tone
-4. CAMERA - Lens (35mm, 85mm), aperture (f/1.4), depth of field, bokeh
-5. TEXTURE - Surface details, material qualities
-6. COLOR - Specific palette, color grading
-
-OUTPUT: ONE vivid, continuous prompt. NO explanations. Be SPECIFIC. 150-200 words.`;
-
     const promptCraftingRequest = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
       {
@@ -69,12 +30,33 @@ OUTPUT: ONE vivid, continuous prompt. NO explanations. Be SPECIFIC. 150-200 word
         body: JSON.stringify({
           contents: [{
             parts: [{
-              text: promptInstructions
+              text: `You are a world-class art director creating an image prompt for Imagen 4 AI. Your goal: create a STUNNING, AWARD-WINNING 16:9 artwork for display on a Samsung Frame TV.
+
+ARTISTIC STYLE: ${style}
+SUBJECT/THEME: ${subject}
+
+Your prompt must be HIGHLY DETAILED and SPECIFIC to achieve the desired style. Describe:
+
+1. COMPOSITION - Precise placement of elements, use of space (negative space if the style calls for it), visual balance, focal points, depth layers
+
+2. LIGHTING - Exact lighting setup that serves the style (dramatic, soft, harsh, diffused, directional), light source, shadows, highlights, color temperature
+
+3. MOOD & ATMOSPHERE - The emotional quality, environmental conditions, time of day, sense of place
+
+4. STYLE EXECUTION - How specifically to achieve this artistic style. What makes this style distinctive? Capture its essence precisely.
+
+5. COLOR & TONE - Specific palette, saturation levels, contrast, color relationships that define this style
+
+6. TECHNICAL QUALITY - Resolution, clarity, professional finish. "4K, masterfully executed, gallery quality"
+
+CRITICAL: Your prompt must HONOR THE CHOSEN STYLE. If the style is minimalist, describe how to achieve minimalism (negative space, restraint, simplicity). If it's baroque, describe ornate richness. Match your prompt to the style's core principles.
+
+OUTPUT: One detailed, continuous prompt. No explanations. 150-250 words.`
             }]
           }],
           generationConfig: {
-            temperature: isMinimalist ? 0.7 : 1.2,
-            maxOutputTokens: isMinimalist ? 150 : 400,
+            temperature: 1.0,
+            maxOutputTokens: 400,
           },
         }),
       }
