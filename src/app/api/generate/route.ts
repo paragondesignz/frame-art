@@ -33,25 +33,25 @@ Include rich atmospheric depth, dramatic interplay of light and shadow, and vivi
 Every element should feel intentional and masterfully executed, worthy of display in a prestigious gallery.
 The mood should be captivating and emotionally resonant, drawing the viewer into the scene.`;
 
-    // Use Gemini 2.5 Flash Image (production-ready with 16:9 support)
+    // Imagen 4 API
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-image-generation:generateContent?key=${apiKey}`,
+      'https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict',
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
         },
         body: JSON.stringify({
-          contents: [
+          instances: [
             {
-              parts: [{ text: detailedPrompt }],
+              prompt: detailedPrompt,
             },
           ],
-          generationConfig: {
-            responseModalities: ['IMAGE'],
-            imageConfig: {
-              aspectRatio: '16:9',
-            },
+          parameters: {
+            sampleCount: 1,
+            aspectRatio: '16:9',
+            personGeneration: 'allow_adult',
           },
         }),
       }
@@ -68,17 +68,9 @@ The mood should be captivating and emotionally resonant, drawing the viewer into
 
     const data = await response.json();
 
-    // Extract image from Gemini response
-    let imageBase64: string | undefined;
-
-    if (data.candidates && data.candidates[0]?.content?.parts) {
-      for (const part of data.candidates[0].content.parts) {
-        if (part.inlineData?.data) {
-          imageBase64 = part.inlineData.data;
-          break;
-        }
-      }
-    }
+    // Extract image from Imagen 4 response
+    const imageBase64 = data.predictions?.[0]?.bytesBase64Encoded
+      || data.generated_images?.[0]?.image?.imageBytes;
 
     if (!imageBase64) {
       console.error('No image in response:', JSON.stringify(data, null, 2));
