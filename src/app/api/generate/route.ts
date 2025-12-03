@@ -19,16 +19,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Construct the prompt
-    let prompt = style;
-    if (userPrompt && userPrompt.trim()) {
-      prompt = `${style}, depicting ${userPrompt.trim()}`;
-    } else {
-      prompt = `${style}, beautiful artistic composition suitable for display on a TV`;
-    }
+    // Build a detailed, comprehensive prompt for high-quality 16:9 artwork
+    const subject = userPrompt?.trim() || 'a serene natural landscape with dramatic lighting';
 
-    // Add aspect ratio and quality hints
-    prompt += ', high quality, detailed, 16:9 aspect ratio artwork for Samsung Frame TV display';
+    const detailedPrompt = `Create a stunning 16:9 widescreen artwork in the following style:
+
+ARTISTIC STYLE: ${style}
+
+SUBJECT MATTER: ${subject}
+
+TECHNICAL REQUIREMENTS:
+- Aspect ratio: Exactly 16:9 widescreen horizontal format (like a TV screen)
+- Resolution: High definition, sharp details throughout
+- Composition: Well-balanced, with clear focal points and visual flow across the wide format
+
+QUALITY SPECIFICATIONS:
+- Professional gallery-quality artwork suitable for display on a Samsung Frame TV
+- Rich color depth with nuanced tonal gradations
+- Masterful use of light and shadow to create depth and atmosphere
+- Fine textural details that reward close inspection
+- Harmonious color palette that creates visual cohesion
+
+ARTISTIC ELEMENTS:
+- Strong compositional structure utilizing the wide 16:9 format
+- Atmospheric perspective and depth of field where appropriate
+- Careful attention to edges, transitions, and the interplay of forms
+- A sense of mood and emotional resonance
+
+The final image must be horizontally oriented in exact 16:9 widescreen proportions, museum-quality, and visually captivating when displayed as wall art.`;
 
     // Use Gemini's image generation model
     const response = await fetch(
@@ -41,7 +59,7 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify({
           contents: [
             {
-              parts: [{ text: `Generate an image: ${prompt}` }],
+              parts: [{ text: detailedPrompt }],
             },
           ],
           generationConfig: {
@@ -84,7 +102,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       imageBase64,
-      prompt,
+      prompt: `${style} - ${subject}`,
     });
   } catch (error) {
     console.error('Generate error:', error);

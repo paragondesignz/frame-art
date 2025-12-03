@@ -223,7 +223,7 @@ export default function Home() {
       <footer className="border-t border-border mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <p className="text-sm text-muted text-center">
-            Powered by Google Imagen 4 AI
+            Powered by Google Gemini AI
           </p>
         </div>
       </footer>
