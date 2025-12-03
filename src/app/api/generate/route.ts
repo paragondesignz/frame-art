@@ -19,36 +19,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build a detailed, comprehensive prompt for high-quality 16:9 artwork
-    const subject = userPrompt?.trim() || 'a serene natural landscape with dramatic lighting';
+    // Build a vivid, cinematic prompt for stunning artwork
+    const subject = userPrompt?.trim() || 'a breathtaking natural landscape at golden hour';
 
-    const detailedPrompt = `Create a stunning 16:9 widescreen artwork in the following style:
+    // Craft an evocative, detailed prompt that inspires stunning imagery
+    const detailedPrompt = `${style}
 
-ARTISTIC STYLE: ${style}
+Scene: ${subject}
 
-SUBJECT MATTER: ${subject}
+Render this as a breathtaking, museum-quality artwork with extraordinary attention to detail.
+The composition should be cinematic and sweeping, making full use of the wide frame.
+Include rich atmospheric depth, dramatic interplay of light and shadow, and vivid yet harmonious colors.
+Every element should feel intentional and masterfully executed, worthy of display in a prestigious gallery.
+The mood should be captivating and emotionally resonant, drawing the viewer into the scene.`;
 
-TECHNICAL REQUIREMENTS:
-- Aspect ratio: Exactly 16:9 widescreen horizontal format (like a TV screen)
-- Resolution: High definition, sharp details throughout
-- Composition: Well-balanced, with clear focal points and visual flow across the wide format
-
-QUALITY SPECIFICATIONS:
-- Professional gallery-quality artwork suitable for display on a Samsung Frame TV
-- Rich color depth with nuanced tonal gradations
-- Masterful use of light and shadow to create depth and atmosphere
-- Fine textural details that reward close inspection
-- Harmonious color palette that creates visual cohesion
-
-ARTISTIC ELEMENTS:
-- Strong compositional structure utilizing the wide 16:9 format
-- Atmospheric perspective and depth of field where appropriate
-- Careful attention to edges, transitions, and the interplay of forms
-- A sense of mood and emotional resonance
-
-The final image must be horizontally oriented in exact 16:9 widescreen proportions, museum-quality, and visually captivating when displayed as wall art.`;
-
-    // Use Gemini's image generation model
+    // Use Gemini's image generation model with proper 16:9 config
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
       {
@@ -64,6 +49,9 @@ The final image must be horizontally oriented in exact 16:9 widescreen proportio
           ],
           generationConfig: {
             responseModalities: ['IMAGE', 'TEXT'],
+            imageConfig: {
+              aspectRatio: '16:9',
+            },
           },
         }),
       }
