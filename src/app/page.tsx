@@ -129,10 +129,9 @@ export default function Home() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Main App Section - Settings Left, Preview Right */}
-        <div className="flex flex-col md:flex-row gap-6 lg:gap-8 mb-12">
-          {/* Left Column - Settings */}
-          <div className="w-full md:w-[350px] lg:w-[400px] flex-shrink-0 space-y-6 order-2 md:order-1">
-            {/* Create Artwork Panel */}
+        <div className="flex flex-col md:flex-row gap-6 lg:gap-8 mb-8">
+          {/* Left Column - Create Panel */}
+          <div className="w-full md:w-[350px] lg:w-[400px] flex-shrink-0 order-2 md:order-1">
             <div className="bg-surface rounded-xl p-6 border border-border">
               <div className="flex items-center gap-2 mb-4">
                 <Sparkles className="w-5 h-5 text-accent" />
@@ -148,6 +147,14 @@ export default function Home() {
                 />
               </div>
 
+              {/* Selected Style Display */}
+              {selectedStyle && (
+                <div className="mb-4 p-3 bg-accent/10 border border-accent/30 rounded-lg">
+                  <p className="text-xs text-muted mb-1">Selected Style</p>
+                  <p className="font-medium text-foreground">{selectedStyle.name}</p>
+                </div>
+              )}
+
               {/* Generate Button */}
               <GenerateButton
                 onClick={handleGenerate}
@@ -161,30 +168,6 @@ export default function Home() {
                 </p>
               )}
             </div>
-
-            {/* Style Selector */}
-            <div className="bg-surface rounded-xl p-6 border border-border">
-              <h2 className="font-display text-lg font-semibold mb-4 text-foreground">
-                Choose Style
-              </h2>
-              <StyleSelector
-                selectedStyle={selectedStyle}
-                onSelectStyle={setSelectedStyle}
-              />
-            </div>
-
-            {/* Selected Style Display */}
-            {selectedStyle && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-surface rounded-xl p-4 border border-accent/30"
-              >
-                <p className="text-xs text-muted mb-1">Selected Style</p>
-                <p className="font-medium text-foreground">{selectedStyle.name}</p>
-                <p className="text-sm text-muted mt-1">{selectedStyle.description}</p>
-              </motion.div>
-            )}
           </div>
 
           {/* Right Column - Preview */}
@@ -205,6 +188,17 @@ export default function Home() {
             )}
           </div>
         </div>
+
+        {/* Style Selector - Full Width */}
+        <section className="mb-8">
+          <h2 className="font-display text-xl font-semibold mb-4 text-foreground">
+            Choose Your Style
+          </h2>
+          <StyleSelector
+            selectedStyle={selectedStyle}
+            onSelectStyle={setSelectedStyle}
+          />
+        </section>
 
         {/* Divider */}
         <div className="border-t border-border my-8" />
