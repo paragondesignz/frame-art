@@ -33,29 +33,48 @@ Include rich atmospheric depth, dramatic interplay of light and shadow, and vivi
 Every element should feel intentional and masterfully executed, worthy of display in a prestigious gallery.
 The mood should be captivating and emotionally resonant, drawing the viewer into the scene.`;
 
-    // Use Gemini's image generation model with proper 16:9 config
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+    // Try Imagen 4 first, fallback to Gemini if it fails
+    let response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          contents: [
-            {
-              parts: [{ text: detailedPrompt }],
-            },
-          ],
-          generationConfig: {
-            responseModalities: ['IMAGE', 'TEXT'],
-            imageConfig: {
-              aspectRatio: '16:9',
-            },
+          instances: [{ prompt: detailedPrompt }],
+          parameters: {
+            sampleCount: 1,
+            aspectRatio: '16:9',
+            personGeneration: 'allow_adult',
           },
         }),
       }
     );
+
+    // If Imagen 4 fails, try Gemini 2.0 Flash
+    if (!response.ok) {
+      console.log('Imagen 4 failed, trying Gemini 2.0 Flash...');
+      response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [{ text: `Generate a 16:9 widescreen image: ${detailedPrompt}` }],
+              },
+            ],
+            generationConfig: {
+              responseModalities: ['IMAGE', 'TEXT'],
+            },
+          }),
+        }
+      );
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -68,10 +87,15 @@ The mood should be captivating and emotionally resonant, drawing the viewer into
 
     const data = await response.json();
 
-    // Extract image from Gemini response
+    // Extract image from response (handle both Imagen 4 and Gemini formats)
     let imageBase64: string | undefined;
 
-    if (data.candidates && data.candidates[0]?.content?.parts) {
+    // Imagen 4 format: generated_images[0].image.imageBytes
+    if (data.generated_images && data.generated_images[0]?.image?.imageBytes) {
+      imageBase64 = data.generated_images[0].image.imageBytes;
+    }
+    // Gemini format: candidates[0].content.parts[].inlineData.data
+    else if (data.candidates && data.candidates[0]?.content?.parts) {
       for (const part of data.candidates[0].content.parts) {
         if (part.inlineData?.data) {
           imageBase64 = part.inlineData.data;
