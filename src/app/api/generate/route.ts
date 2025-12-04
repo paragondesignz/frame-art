@@ -77,7 +77,7 @@ OUTPUT: One detailed, continuous prompt. No explanations. 150-250 words.`
 
     // Step 2: Generate image with Gemini 2.5 Flash
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-image:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: {
