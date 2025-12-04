@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const subject = userPrompt?.trim() || 'a beautiful and captivating scene';
 
     const promptCraftingRequest = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -63,7 +63,9 @@ OUTPUT: One detailed, continuous prompt. No explanations. 150-250 words.`
     );
 
     if (!promptCraftingRequest.ok) {
-      throw new Error('Failed to craft prompt');
+      const errorText = await promptCraftingRequest.text();
+      console.error('Prompt crafting error:', errorText);
+      throw new Error(`Failed to craft prompt: ${errorText}`);
     }
 
     const promptData = await promptCraftingRequest.json();
