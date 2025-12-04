@@ -75,9 +75,9 @@ OUTPUT: One detailed, continuous prompt. No explanations. 150-250 words.`
 
     console.log('Crafted prompt:', craftedPrompt);
 
-    // Step 2: Generate image with Gemini 2.5 Flash
+    // Step 2: Generate image with Gemini 2.5 Flash Image
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: {
@@ -86,11 +86,11 @@ OUTPUT: One detailed, continuous prompt. No explanations. 150-250 words.`
         body: JSON.stringify({
           contents: [{
             parts: [{
-              text: `Generate a 16:9 aspect ratio image: ${craftedPrompt}`,
+              text: craftedPrompt,
             }],
           }],
           generationConfig: {
-            responseModalities: ['image', 'text'],
+            responseModalities: ['TEXT', 'IMAGE'],
           },
         }),
       }
@@ -107,10 +107,10 @@ OUTPUT: One detailed, continuous prompt. No explanations. 150-250 words.`
 
     const data = await response.json();
 
-    // Extract image from Gemini 2.5 Flash response
+    // Extract image from Gemini 2.5 Flash Image response
     const parts = data.candidates?.[0]?.content?.parts || [];
-    const imagePart = parts.find((part: { inline_data?: { data: string } }) => part.inline_data?.data);
-    const imageBase64 = imagePart?.inline_data?.data;
+    const imagePart = parts.find((part: { inlineData?: { data: string } }) => part.inlineData?.data);
+    const imageBase64 = imagePart?.inlineData?.data;
 
     if (!imageBase64) {
       console.error('No image in response:', JSON.stringify(data, null, 2));
