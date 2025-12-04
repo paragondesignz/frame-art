@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const subject = userPrompt?.trim() || 'a beautiful and captivating scene';
 
     const promptCraftingRequest = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -75,25 +75,22 @@ OUTPUT: One detailed, continuous prompt. No explanations. 150-250 words.`
 
     console.log('Crafted prompt:', craftedPrompt);
 
-    // Step 2: Generate image with Imagen 4
+    // Step 2: Generate image with Gemini 2.5 Flash
     const response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict',
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-image:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
         },
         body: JSON.stringify({
-          instances: [
-            {
-              prompt: craftedPrompt,
-            },
-          ],
-          parameters: {
-            sampleCount: 1,
-            aspectRatio: '16:9',
-            personGeneration: 'allow_adult',
+          contents: [{
+            parts: [{
+              text: `Generate a 16:9 aspect ratio image: ${craftedPrompt}`,
+            }],
+          }],
+          generationConfig: {
+            responseModalities: ['image', 'text'],
           },
         }),
       }
@@ -110,9 +107,10 @@ OUTPUT: One detailed, continuous prompt. No explanations. 150-250 words.`
 
     const data = await response.json();
 
-    // Extract image from Imagen 4 response
-    const imageBase64 = data.predictions?.[0]?.bytesBase64Encoded
-      || data.generated_images?.[0]?.image?.imageBytes;
+    // Extract image from Gemini 2.5 Flash response
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    const imagePart = parts.find((part: { inline_data?: { data: string } }) => part.inline_data?.data);
+    const imageBase64 = imagePart?.inline_data?.data;
 
     if (!imageBase64) {
       console.error('No image in response:', JSON.stringify(data, null, 2));
