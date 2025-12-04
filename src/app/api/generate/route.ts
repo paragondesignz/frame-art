@@ -93,7 +93,7 @@ OUTPUT: One detailed, continuous prompt. No explanations. 150-250 words.`
           }],
           generationConfig: {
             responseModalities: ['TEXT', 'IMAGE'],
-            imageGenerationConfig: {
+            imageConfig: {
               aspectRatio: '16:9',
             },
           },
