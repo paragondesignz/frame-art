@@ -79,9 +79,9 @@ OUTPUT: One detailed, continuous prompt. No explanations. 150-250 words.`
 
     console.log('Crafted prompt:', craftedPrompt);
 
-    // Step 2: Generate image with Gemini 2.5 Flash Image
+    // Step 2: Generate image with Gemini 3 Pro Image
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: {
@@ -114,7 +114,7 @@ OUTPUT: One detailed, continuous prompt. No explanations. 150-250 words.`
 
     const data = await response.json();
 
-    // Extract image from Gemini 2.5 Flash Image response
+    // Extract image from Gemini 3 Pro Image response
     const parts = data.candidates?.[0]?.content?.parts || [];
     const imagePart = parts.find((part: { inlineData?: { data: string } }) => part.inlineData?.data);
     const imageBase64 = imagePart?.inlineData?.data;
