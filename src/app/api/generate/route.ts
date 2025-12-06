@@ -68,13 +68,20 @@ OUTPUT: One detailed, continuous prompt. No explanations. 150-250 words.${tealAc
       }
     );
 
+    const promptResponseText = await promptCraftingRequest.text();
+
     if (!promptCraftingRequest.ok) {
-      const errorText = await promptCraftingRequest.text();
-      console.error('Prompt crafting error:', errorText);
-      throw new Error(`Failed to craft prompt: ${errorText}`);
+      console.error('Prompt crafting error:', promptResponseText);
+      throw new Error(`Failed to craft prompt: ${promptResponseText}`);
     }
 
-    const promptData = await promptCraftingRequest.json();
+    let promptData;
+    try {
+      promptData = JSON.parse(promptResponseText);
+    } catch {
+      console.error('Failed to parse prompt response:', promptResponseText.substring(0, 500));
+      throw new Error(`Invalid prompt response: ${promptResponseText.substring(0, 200)}`);
+    }
     const craftedPrompt = promptData.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
     if (!craftedPrompt) {
