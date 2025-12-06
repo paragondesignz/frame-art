@@ -53,9 +53,11 @@ Your prompt must be HIGHLY DETAILED and SPECIFIC to achieve the desired style. D
 
 5. COLOR & TONE - Specific palette, saturation levels, contrast, color relationships that define this style
 
-6. TECHNICAL QUALITY - Resolution, clarity, professional finish. "4K, masterfully executed, gallery quality"
+6. TECHNICAL QUALITY - Resolution, clarity, professional finish. "4K, masterfully executed"
 
-CRITICAL: Your prompt must HONOR THE CHOSEN STYLE. If the style is minimalist, describe how to achieve minimalism (negative space, restraint, simplicity). If it's baroque, describe ornate richness. Match your prompt to the style's core principles.
+CRITICAL: Your prompt must HONOR THE CHOSEN STYLE.
+
+IMPORTANT: The image must be the artwork itself - DO NOT include picture frames, borders, gallery walls, or any framing elements. The image should fill the entire canvas edge-to-edge. If the style is minimalist, describe how to achieve minimalism (negative space, restraint, simplicity). If it's baroque, describe ornate richness. Match your prompt to the style's core principles.
 
 OUTPUT: One detailed, continuous prompt. No explanations. 150-250 words.${tealAccentInstruction}`
             }]
