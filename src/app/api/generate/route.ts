@@ -101,23 +101,33 @@ OUTPUT: One detailed, continuous prompt. No explanations. 150-250 words.${tealAc
             responseModalities: ['TEXT', 'IMAGE'],
             imageConfig: {
               aspectRatio: '16:9',
-              imageSize: '2K',
+              imageSize: '4K',
             },
           },
         }),
       }
     );
 
+    const responseText = await response.text();
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Gemini API error:', errorText);
+      console.error('Gemini API error:', responseText);
       return NextResponse.json(
-        { error: 'Failed to generate image', details: errorText },
+        { error: 'Failed to generate image', details: responseText },
         { status: response.status }
       );
     }
 
-    const data = await response.json();
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      console.error('Failed to parse response:', responseText.substring(0, 500));
+      return NextResponse.json(
+        { error: 'Invalid API response', details: responseText.substring(0, 200) },
+        { status: 500 }
+      );
+    }
 
     // Extract image from Gemini 3 Pro Image response
     const parts = data.candidates?.[0]?.content?.parts || [];
