@@ -20,6 +20,7 @@ interface GenerationInfo {
 export default function Home() {
   const [selectedStyle, setSelectedStyle] = useState<ArtStyle | null>(null);
   const [userPrompt, setUserPrompt] = useState('');
+  const [useTealAccent, setUseTealAccent] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -58,6 +59,7 @@ export default function Home() {
         body: JSON.stringify({
           style: selectedStyle.promptPrefix,
           userPrompt,
+          useTealAccent,
         }),
       });
 
@@ -155,13 +157,27 @@ export default function Home() {
               </div>
 
               {/* Prompt Input */}
-              <div className="mb-6">
+              <div className="mb-4">
                 <PromptInput
                   value={userPrompt}
                   onChange={setUserPrompt}
                   disabled={isGenerating}
                 />
               </div>
+
+              {/* Teal Accent Option */}
+              <label className="flex items-center gap-3 mb-6 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={useTealAccent}
+                  onChange={(e) => setUseTealAccent(e.target.checked)}
+                  disabled={isGenerating}
+                  className="w-4 h-4 rounded border-border bg-surface text-teal-500 focus:ring-teal-500 focus:ring-offset-0 cursor-pointer disabled:opacity-50"
+                />
+                <span className="text-sm text-muted group-hover:text-foreground transition-colors">
+                  Use teal accent palette
+                </span>
+              </label>
 
               {/* Selected Style Display */}
               {selectedStyle && (

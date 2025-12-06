@@ -4,7 +4,7 @@ export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
   try {
-    const { style, userPrompt } = await request.json();
+    const { style, userPrompt, useTealAccent } = await request.json();
 
     if (!style) {
       return NextResponse.json(
@@ -23,6 +23,10 @@ export async function POST(request: NextRequest) {
 
     // Step 1: Use Gemini to craft a unique, detailed prompt
     const subject = userPrompt?.trim() || 'a beautiful and captivating scene';
+
+    const tealAccentInstruction = useTealAccent
+      ? `\n\nCOLOR PALETTE REQUIREMENT: The artwork MUST feature a teal accent color palette. Incorporate shades of teal (#008080), cyan, and aqua as prominent accent colors throughout the composition. These teal tones should complement the overall style while adding a sophisticated, modern touch. Use teal strategically in key focal points, highlights, or decorative elements.`
+      : '';
 
     const promptCraftingRequest = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
@@ -53,7 +57,7 @@ Your prompt must be HIGHLY DETAILED and SPECIFIC to achieve the desired style. D
 
 CRITICAL: Your prompt must HONOR THE CHOSEN STYLE. If the style is minimalist, describe how to achieve minimalism (negative space, restraint, simplicity). If it's baroque, describe ornate richness. Match your prompt to the style's core principles.
 
-OUTPUT: One detailed, continuous prompt. No explanations. 150-250 words.`
+OUTPUT: One detailed, continuous prompt. No explanations. 150-250 words.${tealAccentInstruction}`
             }]
           }],
           generationConfig: {
