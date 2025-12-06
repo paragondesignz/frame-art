@@ -531,7 +531,7 @@ export const artStyles: ArtStyle[] = [
     name: 'Macro Photography',
     category: 'photography',
     description: 'Extreme close-up detail',
-    promptPrefix: 'Stunning macro photography, extreme close-up revealing hidden worlds, razor-thin depth of field, water droplets as lenses, intricate textures and patterns, professional focus stacking sharpness, vibrant colors, nature documentary quality, 100mm macro lens',
+    promptPrefix: 'Stunning macro photography, extreme close-up revealing hidden worlds, razor-thin depth of field, intricate textures and patterns, professional focus stacking sharpness, vibrant colors, nature documentary quality, 100mm macro lens',
   },
   {
     id: 'aerial',
