@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { put, list, del } from '@vercel/blob';
 import { GeneratedImage } from '@/types';
 
+// Disable caching for this route
+export const dynamic = 'force-dynamic';
+
 // GET - List all saved images
 export async function GET() {
   try {
