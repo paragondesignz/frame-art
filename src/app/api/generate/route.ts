@@ -101,7 +101,7 @@ OUTPUT: One detailed, continuous prompt. No explanations. 150-250 words.${tealAc
             responseModalities: ['TEXT', 'IMAGE'],
             imageConfig: {
               aspectRatio: '16:9',
-              imageSize: '4K',
+              imageSize: '2K',
             },
           },
         }),
