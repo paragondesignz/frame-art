@@ -8,11 +8,20 @@ export const dynamic = 'force-dynamic';
 // GET - List all saved images
 export async function GET() {
   try {
-    const { blobs } = await list({
-      prefix: 'frame-art/',
-    });
+    // Fetch all blobs with pagination (default limit is 100)
+    let allBlobs: Awaited<ReturnType<typeof list>>['blobs'] = [];
+    let cursor: string | undefined;
 
-    const images: GeneratedImage[] = blobs
+    do {
+      const response = await list({
+        prefix: 'frame-art/',
+        cursor,
+      });
+      allBlobs = allBlobs.concat(response.blobs);
+      cursor = response.hasMore ? response.cursor : undefined;
+    } while (cursor);
+
+    const images: GeneratedImage[] = allBlobs
       .filter(blob => blob.pathname.endsWith('.png'))
       .map(blob => {
         // Extract metadata from pathname: frame-art/{id}_{style}_{timestamp}.png
@@ -30,7 +39,8 @@ export async function GET() {
           createdAt: new Date(parseInt(timestamp) || Date.now()).toISOString(),
         };
       })
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 100); // Return only the 100 most recent images
 
     return NextResponse.json({ images });
   } catch (error) {
