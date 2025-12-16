@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { put, list, del } from '@vercel/blob';
 import { GeneratedImage } from '@/types';
 
-// Disable caching for this route
+// Disable all caching for this route
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 // GET - List all saved images
 export async function GET() {
@@ -42,12 +43,23 @@ export async function GET() {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 100); // Return only the 100 most recent images
 
-    return NextResponse.json({ images });
+    return NextResponse.json({ images }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'CDN-Cache-Control': 'no-store',
+        'Vercel-CDN-Cache-Control': 'no-store',
+      },
+    });
   } catch (error) {
     console.error('List images error:', error);
     return NextResponse.json(
       { error: 'Failed to list images', images: [] },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+        },
+      }
     );
   }
 }

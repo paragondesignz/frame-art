@@ -36,7 +36,9 @@ export default function Home() {
 
   const loadSavedImages = async () => {
     try {
-      const response = await fetch('/api/images');
+      const response = await fetch('/api/images', {
+        cache: 'no-store',
+      });
       const data = await response.json();
       if (data.images) {
         setSavedImages(data.images);
