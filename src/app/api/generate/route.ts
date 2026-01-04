@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import sharp from 'sharp';
 
 export const maxDuration = 60;
 
@@ -151,9 +152,17 @@ OUTPUT: One detailed, continuous prompt. No explanations. 150-250 words.${tealAc
       );
     }
 
+    // Verify actual image dimensions
+    const imageBuffer = Buffer.from(imageBase64, 'base64');
+    const metadata = await sharp(imageBuffer).metadata();
+    console.log(`📐 Generated image dimensions: ${metadata.width}×${metadata.height} pixels`);
+    console.log(`📊 Expected for 4K 16:9: 3840×2160 pixels`);
+    console.log(`✅ Is 4K: ${metadata.width === 3840 && metadata.height === 2160 ? 'YES' : 'NO'}`);
+
     return NextResponse.json({
       imageBase64,
       prompt: craftedPrompt,
+      dimensions: { width: metadata.width, height: metadata.height },
     });
   } catch (error) {
     console.error('Generate error:', error);

@@ -15,6 +15,7 @@ interface GenerationInfo {
   prompt: string;
   style: string;
   userInput: string;
+  dimensions?: { width: number; height: number };
 }
 
 export default function Home() {
@@ -80,6 +81,7 @@ export default function Home() {
         prompt: data.prompt,
         style: selectedStyle.name,
         userInput: userPrompt || '(none)',
+        dimensions: data.dimensions,
       });
       setPromptExpanded(false);
 
@@ -245,6 +247,21 @@ export default function Home() {
                       <p className="text-xs text-muted mb-1">Style</p>
                       <p className="text-sm text-foreground">{lastGeneration.style}</p>
                     </div>
+                    {lastGeneration.dimensions && (
+                      <div>
+                        <p className="text-xs text-muted mb-1">Resolution</p>
+                        <p className={`text-sm font-medium ${
+                          lastGeneration.dimensions.width === 3840 && lastGeneration.dimensions.height === 2160
+                            ? 'text-green-400'
+                            : 'text-yellow-400'
+                        }`}>
+                          {lastGeneration.dimensions.width} × {lastGeneration.dimensions.height} pixels
+                          {lastGeneration.dimensions.width === 3840 && lastGeneration.dimensions.height === 2160
+                            ? ' ✓ 4K'
+                            : ` (Target: 3840×2160)`}
+                        </p>
+                      </div>
+                    )}
                     <div>
                       <p className="text-xs text-muted mb-1">Your Input</p>
                       <p className="text-sm text-foreground">{lastGeneration.userInput}</p>
