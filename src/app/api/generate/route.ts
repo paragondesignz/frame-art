@@ -160,17 +160,30 @@ OUTPUT: One detailed, continuous prompt. No explanations. 150-250 words.${tealAc
       );
     }
 
-    // Verify actual image dimensions
+    // Process image with Sharp
     const imageBuffer = Buffer.from(imageBase64, 'base64');
     const metadata = await sharp(imageBuffer).metadata();
-    console.log(`📐 Generated image dimensions: ${metadata.width}×${metadata.height} pixels`);
-    console.log(`📊 Expected for 4K 16:9: 3840×2160 pixels`);
-    console.log(`✅ Is 4K: ${metadata.width === 3840 && metadata.height === 2160 ? 'YES' : 'NO'}`);
+    console.log(`📐 Original image dimensions: ${metadata.width}×${metadata.height} pixels`);
+
+    // Resize to exactly 3840×2160 (4K 16:9)
+    const TARGET_WIDTH = 3840;
+    const TARGET_HEIGHT = 2160;
+
+    const resizedBuffer = await sharp(imageBuffer)
+      .resize(TARGET_WIDTH, TARGET_HEIGHT, {
+        fit: 'cover',
+        position: 'center',
+      })
+      .png()
+      .toBuffer();
+
+    const resizedBase64 = resizedBuffer.toString('base64');
+    console.log(`✅ Resized to: ${TARGET_WIDTH}×${TARGET_HEIGHT} pixels (4K)`);
 
     return NextResponse.json({
-      imageBase64,
+      imageBase64: resizedBase64,
       prompt: craftedPrompt,
-      dimensions: { width: metadata.width, height: metadata.height },
+      dimensions: { width: TARGET_WIDTH, height: TARGET_HEIGHT },
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);

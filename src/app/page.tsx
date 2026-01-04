@@ -90,6 +90,7 @@ export default function Home() {
       setPromptExpanded(false);
 
       // Save to library
+      console.log('Saving image to library...');
       const saveResponse = await fetch('/api/images', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -100,11 +101,16 @@ export default function Home() {
         }),
       });
 
-      const saveData = await saveResponse.json();
-      if (saveData.image) {
-        setSavedImages(prev => [saveData.image, ...prev]);
-        // Update currentImage to use the blob URL
-        setCurrentImage(saveData.image.url);
+      if (!saveResponse.ok) {
+        console.error('Failed to save image:', saveResponse.status, await saveResponse.text());
+      } else {
+        const saveData = await saveResponse.json();
+        console.log('Image saved:', saveData);
+        if (saveData.image) {
+          setSavedImages(prev => [saveData.image, ...prev]);
+          // Update currentImage to use the blob URL
+          setCurrentImage(saveData.image.url);
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');

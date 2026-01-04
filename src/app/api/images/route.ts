@@ -68,8 +68,10 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const { imageBase64, style, prompt } = await request.json();
+    console.log('Saving image. Style:', style, 'Base64 length:', imageBase64?.length);
 
     if (!imageBase64) {
+      console.error('No image data provided');
       return NextResponse.json(
         { error: 'Image data is required' },
         { status: 400 }
@@ -78,18 +80,21 @@ export async function POST(request: NextRequest) {
 
     // Convert base64 to buffer
     const buffer = Buffer.from(imageBase64, 'base64');
+    console.log('Buffer size:', buffer.length, 'bytes');
 
     // Generate unique filename
     const id = crypto.randomUUID().slice(0, 8);
     const timestamp = Date.now();
     const safeStyle = (style || 'artwork').replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase();
     const filename = `frame-art/${id}_${safeStyle}_${timestamp}.png`;
+    console.log('Uploading to:', filename);
 
     // Upload to Vercel Blob
     const blob = await put(filename, buffer, {
       access: 'public',
       contentType: 'image/png',
     });
+    console.log('Uploaded successfully:', blob.url);
 
     const image: GeneratedImage = {
       id,
@@ -103,7 +108,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Save image error:', error);
     return NextResponse.json(
-      { error: 'Failed to save image' },
+      { error: 'Failed to save image', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
