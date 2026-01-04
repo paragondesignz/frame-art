@@ -81,9 +81,14 @@ OUTPUT: One detailed, continuous prompt. No explanations. 150-250 words.${tealAc
     let promptData;
     try {
       promptData = JSON.parse(promptResponseText);
-    } catch {
-      console.error('Failed to parse prompt response:', promptResponseText.substring(0, 500));
-      throw new Error(`Invalid prompt response: ${promptResponseText.substring(0, 200)}`);
+    } catch (parseError) {
+      console.error('Failed to parse prompt response. Status:', promptCraftingRequest.status);
+      console.error('Response text (first 500 chars):', promptResponseText.substring(0, 500));
+      console.error('Parse error:', parseError);
+      return NextResponse.json(
+        { error: 'Prompt crafting failed', details: promptResponseText.substring(0, 200) },
+        { status: 500 }
+      );
     }
     const craftedPrompt = promptData.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
@@ -92,6 +97,7 @@ OUTPUT: One detailed, continuous prompt. No explanations. 150-250 words.${tealAc
     }
 
     console.log('Crafted prompt:', craftedPrompt);
+    console.log('Starting image generation...');
 
     // Step 2: Generate image with Gemini 3 Pro Image
     const response = await fetch(
@@ -131,10 +137,12 @@ OUTPUT: One detailed, continuous prompt. No explanations. 150-250 words.${tealAc
     let data;
     try {
       data = JSON.parse(responseText);
-    } catch {
-      console.error('Failed to parse response:', responseText.substring(0, 500));
+    } catch (parseError) {
+      console.error('Failed to parse image response. Status:', response.status);
+      console.error('Response text (first 500 chars):', responseText.substring(0, 500));
+      console.error('Parse error:', parseError);
       return NextResponse.json(
-        { error: 'Invalid API response', details: responseText.substring(0, 200) },
+        { error: 'Image generation failed', details: responseText.substring(0, 200) },
         { status: 500 }
       );
     }
@@ -165,9 +173,20 @@ OUTPUT: One detailed, continuous prompt. No explanations. 150-250 words.${tealAc
       dimensions: { width: metadata.width, height: metadata.height },
     });
   } catch (error) {
-    console.error('Generate error:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('Generate error:', errorMessage);
+    console.error('Full error:', error);
+
+    // Provide more specific error messages
+    let userMessage = 'Failed to generate image';
+    if (errorMessage.includes('Request En')) {
+      userMessage = 'Request timed out or was interrupted. Please try again.';
+    } else if (errorMessage.includes('rate') || errorMessage.includes('quota')) {
+      userMessage = 'API rate limit reached. Please wait a moment and try again.';
+    }
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: userMessage, details: errorMessage },
       { status: 500 }
     );
   }
