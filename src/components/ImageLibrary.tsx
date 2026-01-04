@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, ImageIcon } from 'lucide-react';
+import { Trash2, ImageIcon, RefreshCw } from 'lucide-react';
 import Image from 'next/image';
 import HoverTooltip from './HoverTooltip';
 import { GeneratedImage } from '@/types';
@@ -11,12 +11,24 @@ interface ImageLibraryProps {
   images: GeneratedImage[];
   onSelectImage: (image: GeneratedImage) => void;
   onDeleteImage: (id: string) => void;
+  onRefresh?: () => Promise<void>;
 }
 
-export default function ImageLibrary({ images, onSelectImage, onDeleteImage }: ImageLibraryProps) {
+export default function ImageLibrary({ images, onSelectImage, onDeleteImage, onRefresh }: ImageLibraryProps) {
   const [hoveredImage, setHoveredImage] = useState<string | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    if (!onRefresh || isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await onRefresh();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     setMousePosition({ x: e.clientX, y: e.clientY });
@@ -44,9 +56,22 @@ export default function ImageLibrary({ images, onSelectImage, onDeleteImage }: I
 
   return (
     <div className="w-full">
-      <h2 className="font-display text-xl font-semibold mb-4 text-foreground">
-        Your Gallery
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-display text-xl font-semibold text-foreground">
+          Your Gallery
+        </h2>
+        {onRefresh && (
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted hover:text-foreground transition-colors disabled:opacity-50"
+            title="Refresh gallery"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+        )}
+      </div>
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3">
         <AnimatePresence>
           {images.map((image, index) => (

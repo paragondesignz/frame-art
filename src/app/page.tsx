@@ -37,8 +37,12 @@ export default function Home() {
 
   const loadSavedImages = async () => {
     try {
-      const response = await fetch('/api/images', {
+      // Add timestamp to bust any edge caching
+      const response = await fetch(`/api/images?t=${Date.now()}`, {
         cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
       });
       const data = await response.json();
       if (data.images) {
@@ -297,6 +301,7 @@ export default function Home() {
             images={savedImages}
             onSelectImage={handleSelectLibraryImage}
             onDeleteImage={handleDeleteImage}
+            onRefresh={loadSavedImages}
           />
         </section>
       </main>
