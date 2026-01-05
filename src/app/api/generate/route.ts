@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { put } from '@vercel/blob';
 import sharp from 'sharp';
 
 export const maxDuration = 60;
@@ -177,11 +178,30 @@ OUTPUT: One detailed, continuous prompt. No explanations. 150-250 words.${tealAc
       .png()
       .toBuffer();
 
-    const resizedBase64 = resizedBuffer.toString('base64');
     console.log(`✅ Resized to: ${TARGET_WIDTH}×${TARGET_HEIGHT} pixels (4K)`);
+    console.log(`📦 Resized buffer size: ${resizedBuffer.length} bytes`);
+
+    // Save directly to Vercel Blob (avoid round-trip with large base64)
+    const id = crypto.randomUUID().slice(0, 8);
+    const timestamp = Date.now();
+    const safeStyle = (style || 'artwork').replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase();
+    const filename = `frame-art/${id}_${safeStyle}_${timestamp}.png`;
+
+    console.log(`💾 Saving to blob storage: ${filename}`);
+    const blob = await put(filename, resizedBuffer, {
+      access: 'public',
+      contentType: 'image/png',
+    });
+    console.log(`✅ Saved successfully: ${blob.url}`);
 
     return NextResponse.json({
-      imageBase64: resizedBase64,
+      image: {
+        id,
+        url: blob.url,
+        prompt: craftedPrompt,
+        style: style,
+        createdAt: new Date(timestamp).toISOString(),
+      },
       prompt: craftedPrompt,
       dimensions: { width: TARGET_WIDTH, height: TARGET_HEIGHT },
     });

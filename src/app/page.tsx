@@ -76,9 +76,14 @@ export default function Home() {
         throw new Error(data.error || 'Failed to generate image');
       }
 
-      // Create data URL from base64
-      const imageUrl = `data:image/png;base64,${data.imageBase64}`;
-      setCurrentImage(imageUrl);
+      // Image is now saved directly in generate API - use the blob URL
+      if (data.image) {
+        console.log('Image generated and saved:', data.image.url);
+        setCurrentImage(data.image.url);
+
+        // Add to library immediately
+        setSavedImages(prev => [data.image, ...prev]);
+      }
 
       // Store generation info
       setLastGeneration({
@@ -88,30 +93,6 @@ export default function Home() {
         dimensions: data.dimensions,
       });
       setPromptExpanded(false);
-
-      // Save to library
-      console.log('Saving image to library...');
-      const saveResponse = await fetch('/api/images', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          imageBase64: data.imageBase64,
-          style: selectedStyle.name,
-          prompt: data.prompt,
-        }),
-      });
-
-      if (!saveResponse.ok) {
-        console.error('Failed to save image:', saveResponse.status, await saveResponse.text());
-      } else {
-        const saveData = await saveResponse.json();
-        console.log('Image saved:', saveData);
-        if (saveData.image) {
-          setSavedImages(prev => [saveData.image, ...prev]);
-          // Update currentImage to use the blob URL
-          setCurrentImage(saveData.image.url);
-        }
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       console.error('Generate error:', err);
