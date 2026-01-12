@@ -1,34 +1,23 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import StyleSelector from '@/components/StyleSelector';
 import PromptInput from '@/components/PromptInput';
 import GenerateButton from '@/components/GenerateButton';
-import PreviewPanel from '@/components/PreviewPanel';
-import Lightbox from '@/components/Lightbox';
 import ImageLibrary from '@/components/ImageLibrary';
+import ImageDetailView from '@/components/ImageDetailView';
 import { ArtStyle, GeneratedImage } from '@/types';
-import { Tv, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
-
-interface GenerationInfo {
-  prompt: string;
-  style: string;
-  userInput: string;
-  dimensions?: { width: number; height: number };
-}
+import { Tv, Sparkles } from 'lucide-react';
 
 export default function Home() {
   const [selectedStyle, setSelectedStyle] = useState<ArtStyle | null>(null);
   const [userPrompt, setUserPrompt] = useState('');
   const [useTealAccent, setUseTealAccent] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [currentImage, setCurrentImage] = useState<string | null>(null);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
   const [savedImages, setSavedImages] = useState<GeneratedImage[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [lastGeneration, setLastGeneration] = useState<GenerationInfo | null>(null);
-  const [promptExpanded, setPromptExpanded] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null);
 
   // Load saved images on mount
   useEffect(() => {
@@ -79,20 +68,9 @@ export default function Home() {
       // Image is now saved directly in generate API - use the blob URL
       if (data.image) {
         console.log('Image generated and saved:', data.image.url);
-        setCurrentImage(data.image.url);
-
-        // Add to library immediately
+        // Add to library immediately at the top
         setSavedImages(prev => [data.image, ...prev]);
       }
-
-      // Store generation info
-      setLastGeneration({
-        prompt: data.prompt,
-        style: selectedStyle.name,
-        userInput: userPrompt || '(none)',
-        dimensions: data.dimensions,
-      });
-      setPromptExpanded(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       console.error('Generate error:', err);
@@ -102,7 +80,7 @@ export default function Home() {
   };
 
   const handleSelectLibraryImage = useCallback((image: GeneratedImage) => {
-    setCurrentImage(image.url);
+    setSelectedImage(image);
   }, []);
 
   const handleDeleteImage = useCallback(async (id: string) => {
@@ -119,20 +97,41 @@ export default function Home() {
     }
   }, []);
 
+  const handleRegenerate = useCallback(async (image: GeneratedImage) => {
+    // Close the detail view and trigger a new generation with the same style
+    setSelectedImage(null);
+    // Find and select the style that matches
+    // For now, just close and let user manually regenerate
+  }, []);
+
+  // Show detail view if an image is selected
+  if (selectedImage) {
+    return (
+      <AnimatePresence>
+        <ImageDetailView
+          image={selectedImage}
+          onBack={() => setSelectedImage(null)}
+          onDelete={handleDeleteImage}
+          onRegenerate={handleRegenerate}
+        />
+      </AnimatePresence>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <header className="border-b border-border flex-shrink-0">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-accent/10 rounded-lg">
-              <Tv className="w-6 h-6 text-accent" />
+              <Tv className="w-5 h-5 text-accent" />
             </div>
             <div>
-              <h1 className="font-display text-2xl font-bold text-foreground">
+              <h1 className="font-display text-xl font-bold text-foreground">
                 Frame Art
               </h1>
-              <p className="text-sm text-muted">
+              <p className="text-xs text-muted">
                 AI-powered artwork for your Samsung Frame TV
               </p>
             </div>
@@ -140,12 +139,13 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Main App Section - Settings Left, Preview Right */}
-        <div className="flex flex-col md:flex-row gap-6 lg:gap-8 mb-8">
-          {/* Left Column - Create Panel */}
-          <div className="w-full md:w-[350px] lg:w-[400px] flex-shrink-0 order-2 md:order-1">
-            <div className="bg-surface rounded-xl p-6 border border-border">
+      {/* Main Content - 1/3 x 2/3 Layout */}
+      <main className="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex flex-col lg:flex-row gap-6 h-full" style={{ minHeight: 'calc(100vh - 180px)' }}>
+          {/* Left Column - 1/3 width: Create Panel + Style Selector */}
+          <div className="w-full lg:w-1/3 flex flex-col gap-6 order-2 lg:order-1">
+            {/* Create Panel */}
+            <div className="bg-surface rounded-xl p-5 border border-border flex-shrink-0">
               <div className="flex items-center gap-2 mb-4">
                 <Sparkles className="w-5 h-5 text-accent" />
                 <h2 className="font-display text-lg font-semibold">Create Artwork</h2>
@@ -161,7 +161,7 @@ export default function Home() {
               </div>
 
               {/* Teal Accent Option */}
-              <label className="flex items-center gap-3 mb-6 cursor-pointer group">
+              <label className="flex items-center gap-3 mb-5 cursor-pointer group">
                 <input
                   type="checkbox"
                   checked={useTealAccent}
@@ -194,122 +194,56 @@ export default function Home() {
                   Select a style below to start
                 </p>
               )}
+
+              {/* Error Display */}
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm"
+                >
+                  {error}
+                </motion.div>
+              )}
+            </div>
+
+            {/* Style Selector */}
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <h2 className="font-display text-lg font-semibold mb-3 text-foreground flex-shrink-0">
+                Choose Your Style
+              </h2>
+              <div className="h-full overflow-y-auto pb-4">
+                <StyleSelector
+                  selectedStyle={selectedStyle}
+                  onSelectStyle={setSelectedStyle}
+                />
+              </div>
             </div>
           </div>
 
-          {/* Right Column - Preview */}
-          <div className="flex-1 order-1 md:order-2 md:sticky md:top-8 md:self-start">
-            <PreviewPanel
-              imageUrl={currentImage}
-              isLoading={isGenerating}
-              onClick={() => currentImage && setLightboxOpen(true)}
-            />
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm"
-              >
-                {error}
-              </motion.div>
-            )}
-
-            {/* Generation Info - Collapsible */}
-            {lastGeneration && currentImage && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-4 bg-surface rounded-xl border border-border overflow-hidden"
-              >
-                <button
-                  onClick={() => setPromptExpanded(!promptExpanded)}
-                  className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-white/5 transition-colors"
-                >
-                  <span className="text-sm font-medium text-foreground">Generation Details</span>
-                  {promptExpanded ? (
-                    <ChevronUp className="w-4 h-4 text-muted" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-muted" />
-                  )}
-                </button>
-                {promptExpanded && (
-                  <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
-                    <div>
-                      <p className="text-xs text-muted mb-1">Style</p>
-                      <p className="text-sm text-foreground">{lastGeneration.style}</p>
-                    </div>
-                    {lastGeneration.dimensions && (
-                      <div>
-                        <p className="text-xs text-muted mb-1">Resolution</p>
-                        <p className={`text-sm font-medium ${
-                          lastGeneration.dimensions.width === 3840 && lastGeneration.dimensions.height === 2160
-                            ? 'text-green-400'
-                            : 'text-yellow-400'
-                        }`}>
-                          {lastGeneration.dimensions.width} × {lastGeneration.dimensions.height} pixels
-                          {lastGeneration.dimensions.width === 3840 && lastGeneration.dimensions.height === 2160
-                            ? ' ✓ 4K'
-                            : ` (Target: 3840×2160)`}
-                        </p>
-                      </div>
-                    )}
-                    <div>
-                      <p className="text-xs text-muted mb-1">Your Input</p>
-                      <p className="text-sm text-foreground">{lastGeneration.userInput}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted mb-1">AI-Crafted Prompt</p>
-                      <p className="text-sm text-foreground/80 leading-relaxed">{lastGeneration.prompt}</p>
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-            )}
+          {/* Right Column - 2/3 width: Gallery */}
+          <div className="w-full lg:w-2/3 order-1 lg:order-2">
+            <div className="bg-surface rounded-xl p-5 border border-border h-full" style={{ minHeight: '500px' }}>
+              <ImageLibrary
+                images={savedImages}
+                onSelectImage={handleSelectLibraryImage}
+                onDeleteImage={handleDeleteImage}
+                onRefresh={loadSavedImages}
+                isGenerating={isGenerating}
+              />
+            </div>
           </div>
         </div>
-
-        {/* Style Selector - Full Width */}
-        <section className="mb-8">
-          <h2 className="font-display text-xl font-semibold mb-4 text-foreground">
-            Choose Your Style
-          </h2>
-          <StyleSelector
-            selectedStyle={selectedStyle}
-            onSelectStyle={setSelectedStyle}
-          />
-        </section>
-
-        {/* Divider */}
-        <div className="border-t border-border my-8" />
-
-        {/* Image Library Section */}
-        <section>
-          <ImageLibrary
-            images={savedImages}
-            onSelectImage={handleSelectLibraryImage}
-            onDeleteImage={handleDeleteImage}
-            onRefresh={loadSavedImages}
-          />
-        </section>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <p className="text-sm text-muted text-center">
+      <footer className="border-t border-border mt-auto flex-shrink-0">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <p className="text-xs text-muted text-center">
             Powered by Google Gemini AI
           </p>
         </div>
       </footer>
-
-      {/* Lightbox */}
-      {currentImage && (
-        <Lightbox
-          isOpen={lightboxOpen}
-          imageUrl={currentImage}
-          onClose={() => setLightboxOpen(false)}
-        />
-      )}
     </div>
   );
 }
