@@ -25,6 +25,10 @@ interface CanvasState {
   position: { x: number; y: number };
 }
 
+// Image dimensions (4K)
+const IMAGE_WIDTH = 3840;
+const IMAGE_HEIGHT = 2160;
+
 export default function ImageDetailView({ image, onBack, onDelete, onRegenerate, onImageEdited }: ImageDetailViewProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPromptExpanded, setIsPromptExpanded] = useState(false);
@@ -35,68 +39,117 @@ export default function ImageDetailView({ image, onBack, onDelete, onRegenerate,
   const editInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Infinite canvas state
-  const [canvas, setCanvas] = useState<CanvasState>({ scale: 1, position: { x: 0, y: 0 } });
+  // Canvas state for zoom and pan
+  const [canvas, setCanvas] = useState<CanvasState | null>(null);
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const [fitScale, setFitScale] = useState<number | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const imageIdRef = useRef(image.id);
 
-  const MIN_SCALE = 0.1;
-  const MAX_SCALE = 5;
-  const ZOOM_SENSITIVITY = 0.002;
+  const MIN_SCALE = 0.05;
+  const MAX_SCALE = 3;
+  const ZOOM_SENSITIVITY = 0.001;
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [editMessages]);
 
+  // Calculate fit scale based on container size
+  const calculateFitScale = useCallback((containerWidth: number, containerHeight: number) => {
+    if (containerWidth === 0 || containerHeight === 0) return null;
+    const padding = 60; // Padding around the image
+    const availableWidth = containerWidth - padding;
+    const availableHeight = containerHeight - padding;
+    const scaleX = availableWidth / IMAGE_WIDTH;
+    const scaleY = availableHeight / IMAGE_HEIGHT;
+    return Math.min(scaleX, scaleY);
+  }, []);
+
+  // Observe container size and update fit scale
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const updateSize = () => {
+      if (containerRef.current) {
+        const { width, height } = containerRef.current.getBoundingClientRect();
+        const newFitScale = calculateFitScale(width, height);
+
+        if (newFitScale !== null) {
+          setFitScale(newFitScale);
+
+          // Initialize canvas if not yet initialized or if image changed
+          setCanvas(prev => {
+            if (prev === null || imageIdRef.current !== image.id) {
+              imageIdRef.current = image.id;
+              return { scale: newFitScale, position: { x: 0, y: 0 } };
+            }
+            return prev;
+          });
+        }
+      }
+    };
+
+    const resizeObserver = new ResizeObserver(updateSize);
+    resizeObserver.observe(containerRef.current);
+    updateSize(); // Initial calculation
+
+    return () => resizeObserver.disconnect();
+  }, [calculateFitScale, image.id]);
+
   // Update current image when prop changes
   useEffect(() => {
     setCurrentImage(image);
     setEditMessages([]);
-    // Reset canvas when image changes
-    setCanvas({ scale: 1, position: { x: 0, y: 0 } });
-  }, [image.id]);
+    // Reset canvas to fit view when image changes
+    if (fitScale !== null && imageIdRef.current !== image.id) {
+      imageIdRef.current = image.id;
+      setCanvas({ scale: fitScale, position: { x: 0, y: 0 } });
+    }
+  }, [image.id, fitScale]);
 
   // Zoom function that zooms towards a point
   const zoomToPoint = useCallback((newScale: number, pointX: number, pointY: number) => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || !canvas) return;
 
     const clampedScale = Math.min(Math.max(newScale, MIN_SCALE), MAX_SCALE);
     const rect = containerRef.current.getBoundingClientRect();
 
-    // Get point relative to container center
-    const containerCenterX = rect.width / 2;
-    const containerCenterY = rect.height / 2;
-    const mouseX = pointX - rect.left;
-    const mouseY = pointY - rect.top;
+    // Get mouse position relative to container center
+    const mouseX = pointX - rect.left - rect.width / 2;
+    const mouseY = pointY - rect.top - rect.height / 2;
 
-    // Calculate the point in canvas space before zoom
-    const pointInCanvasX = (mouseX - containerCenterX - canvas.position.x) / canvas.scale;
-    const pointInCanvasY = (mouseY - containerCenterY - canvas.position.y) / canvas.scale;
+    // Calculate the point in image space before zoom
+    const imageX = (mouseX - canvas.position.x) / canvas.scale;
+    const imageY = (mouseY - canvas.position.y) / canvas.scale;
 
     // Calculate new position to keep the point under the cursor
-    const newPosX = mouseX - containerCenterX - pointInCanvasX * clampedScale;
-    const newPosY = mouseY - containerCenterY - pointInCanvasY * clampedScale;
+    const newPosX = mouseX - imageX * clampedScale;
+    const newPosY = mouseY - imageY * clampedScale;
 
     setCanvas({
       scale: clampedScale,
       position: { x: newPosX, y: newPosY }
     });
-  }, [canvas.scale, canvas.position]);
+  }, [canvas]);
 
   // Handle mouse wheel zoom
   const handleWheel = useCallback((e: React.WheelEvent) => {
+    if (!canvas) return;
     e.preventDefault();
     const delta = -e.deltaY * ZOOM_SENSITIVITY;
     const newScale = canvas.scale * (1 + delta);
     zoomToPoint(newScale, e.clientX, e.clientY);
-  }, [canvas.scale, zoomToPoint]);
+  }, [canvas, zoomToPoint]);
 
   // Handle pan start
   const handlePanStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault();
+    if (!canvas) return;
+    // Only start panning on left mouse button or touch
+    if ('button' in e && e.button !== 0) return;
+
     setIsPanning(true);
 
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
@@ -106,7 +159,7 @@ export default function ImageDetailView({ image, onBack, onDelete, onRegenerate,
       x: clientX - canvas.position.x,
       y: clientY - canvas.position.y
     });
-  }, [canvas.position]);
+  }, [canvas]);
 
   // Handle pan move
   const handlePanMove = useCallback((e: React.MouseEvent | React.TouchEvent) => {
@@ -115,13 +168,16 @@ export default function ImageDetailView({ image, onBack, onDelete, onRegenerate,
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
 
-    setCanvas(prev => ({
-      ...prev,
-      position: {
-        x: clientX - panStart.x,
-        y: clientY - panStart.y
-      }
-    }));
+    setCanvas(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        position: {
+          x: clientX - panStart.x,
+          y: clientY - panStart.y
+        }
+      };
+    });
   }, [isPanning, panStart]);
 
   // Handle pan end
@@ -149,6 +205,7 @@ export default function ImageDetailView({ image, onBack, onDelete, onRegenerate,
   }, [handlePanStart]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!canvas) return;
     if (e.touches.length === 2 && lastTouchDistance !== null && touchCenter !== null) {
       e.preventDefault();
       const touch1 = e.touches[0];
@@ -166,7 +223,7 @@ export default function ImageDetailView({ image, onBack, onDelete, onRegenerate,
     } else if (e.touches.length === 1) {
       handlePanMove(e);
     }
-  }, [lastTouchDistance, touchCenter, canvas.scale, zoomToPoint, handlePanMove]);
+  }, [canvas, lastTouchDistance, touchCenter, zoomToPoint, handlePanMove]);
 
   const handleTouchEnd = useCallback(() => {
     setLastTouchDistance(null);
@@ -176,20 +233,86 @@ export default function ImageDetailView({ image, onBack, onDelete, onRegenerate,
 
   // Zoom button handlers
   const handleZoomIn = useCallback(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || !canvas) return;
     const rect = containerRef.current.getBoundingClientRect();
-    zoomToPoint(canvas.scale * 1.25, rect.left + rect.width / 2, rect.top + rect.height / 2);
-  }, [canvas.scale, zoomToPoint]);
+    zoomToPoint(canvas.scale * 1.3, rect.left + rect.width / 2, rect.top + rect.height / 2);
+  }, [canvas, zoomToPoint]);
 
   const handleZoomOut = useCallback(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || !canvas) return;
     const rect = containerRef.current.getBoundingClientRect();
-    zoomToPoint(canvas.scale / 1.25, rect.left + rect.width / 2, rect.top + rect.height / 2);
-  }, [canvas.scale, zoomToPoint]);
+    zoomToPoint(canvas.scale / 1.3, rect.left + rect.width / 2, rect.top + rect.height / 2);
+  }, [canvas, zoomToPoint]);
 
-  const handleResetView = useCallback(() => {
+  // Fit to view - shows entire image in container
+  const handleFitToView = useCallback(() => {
+    if (fitScale === null) return;
+    setCanvas({ scale: fitScale, position: { x: 0, y: 0 } });
+  }, [fitScale]);
+
+  // Zoom to actual size (100% = 1 pixel = 1 pixel)
+  const handleActualSize = useCallback(() => {
     setCanvas({ scale: 1, position: { x: 0, y: 0 } });
   }, []);
+
+  // Reset view - same as fit to view
+  const handleResetView = useCallback(() => {
+    handleFitToView();
+  }, [handleFitToView]);
+
+  // Double-click to toggle between fit and 100%
+  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+    if (!canvas || fitScale === null) return;
+    // If close to fit scale, zoom to 100% centered on click point
+    if (Math.abs(canvas.scale - fitScale) < 0.01) {
+      zoomToPoint(1, e.clientX, e.clientY);
+    } else {
+      // Otherwise, fit to view
+      handleFitToView();
+    }
+  }, [canvas, fitScale, zoomToPoint, handleFitToView]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      switch (e.key) {
+        case '+':
+        case '=':
+          e.preventDefault();
+          handleZoomIn();
+          break;
+        case '-':
+          e.preventDefault();
+          handleZoomOut();
+          break;
+        case '0':
+          e.preventDefault();
+          handleFitToView();
+          break;
+        case '1':
+          e.preventDefault();
+          handleActualSize();
+          break;
+        case 'Escape':
+          e.preventDefault();
+          onBack();
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleZoomIn, handleZoomOut, handleFitToView, handleActualSize, onBack]);
+
+  // Helper to check if at fit scale
+  const isAtFitScale = canvas && fitScale !== null && Math.abs(canvas.scale - fitScale) < 0.01;
+  const isAtActualSize = canvas && Math.abs(canvas.scale - 1) < 0.01;
+
+  // Current scale for display
+  const currentScale = canvas?.scale ?? fitScale ?? 1;
 
   const handleEdit = async () => {
     if (!editInput.trim() || isEditing) return;
@@ -331,47 +454,86 @@ export default function ImageDetailView({ image, onBack, onDelete, onRegenerate,
           <div className="lg:col-span-2">
             <div className="relative bg-surface rounded-xl overflow-hidden border border-border">
               {/* Canvas Controls */}
-              <div className="absolute top-4 right-4 z-10 flex gap-2 bg-surface/80 backdrop-blur-sm rounded-lg p-1">
+              <div className="absolute top-4 right-4 z-10 flex items-center gap-1 bg-surface/90 backdrop-blur-sm rounded-lg p-1 shadow-lg">
                 <button
                   onClick={handleZoomOut}
-                  disabled={canvas.scale <= MIN_SCALE}
-                  className="p-1.5 rounded hover:bg-surface-hover transition-colors disabled:opacity-30"
-                  title="Zoom out"
+                  disabled={!canvas || currentScale <= MIN_SCALE}
+                  className="p-2 rounded-md hover:bg-white/10 transition-colors disabled:opacity-30"
+                  title="Zoom out (-)"
                 >
                   <ZoomOut className="w-4 h-4" />
                 </button>
-                <span className="text-xs font-medium self-center min-w-[40px] text-center">
-                  {Math.round(canvas.scale * 100)}%
-                </span>
+
+                <div className="px-2 min-w-[60px] text-center">
+                  <span className="text-xs font-medium tabular-nums">
+                    {Math.round(currentScale * 100)}%
+                  </span>
+                </div>
+
                 <button
                   onClick={handleZoomIn}
-                  disabled={canvas.scale >= MAX_SCALE}
-                  className="p-1.5 rounded hover:bg-surface-hover transition-colors disabled:opacity-30"
-                  title="Zoom in"
+                  disabled={!canvas || currentScale >= MAX_SCALE}
+                  className="p-2 rounded-md hover:bg-white/10 transition-colors disabled:opacity-30"
+                  title="Zoom in (+)"
                 >
                   <ZoomIn className="w-4 h-4" />
                 </button>
+
+                <div className="w-px h-5 bg-white/20 mx-1" />
+
+                <button
+                  onClick={handleFitToView}
+                  className={`px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    isAtFitScale
+                      ? 'bg-accent/20 text-accent'
+                      : 'hover:bg-white/10 text-muted hover:text-foreground'
+                  }`}
+                  title="Fit to view (0)"
+                >
+                  Fit
+                </button>
+
+                <button
+                  onClick={handleActualSize}
+                  className={`px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    isAtActualSize
+                      ? 'bg-accent/20 text-accent'
+                      : 'hover:bg-white/10 text-muted hover:text-foreground'
+                  }`}
+                  title="Actual size (1)"
+                >
+                  100%
+                </button>
+
+                <div className="w-px h-5 bg-white/20 mx-1" />
+
                 <button
                   onClick={handleResetView}
-                  className="p-1.5 rounded hover:bg-surface-hover transition-colors"
+                  className="p-2 rounded-md hover:bg-white/10 transition-colors"
                   title="Reset view"
                 >
                   <Maximize2 className="w-4 h-4" />
                 </button>
               </div>
 
-              {/* Pan indicator */}
-              <div className="absolute top-4 left-4 z-10 flex items-center gap-1.5 bg-surface/80 backdrop-blur-sm rounded-lg px-2 py-1">
-                <Move className="w-3 h-3 text-muted" />
-                <span className="text-xs text-muted">Drag to pan</span>
+              {/* Pan/zoom hints */}
+              <div className="absolute top-4 left-4 z-10 flex flex-col gap-1">
+                <div className="flex items-center gap-1.5 bg-surface/90 backdrop-blur-sm rounded-lg px-2.5 py-1.5 shadow-lg">
+                  <Move className="w-3 h-3 text-muted" />
+                  <span className="text-xs text-muted">Drag to pan</span>
+                </div>
+                <div className="text-[10px] text-muted/60 px-2.5">
+                  Double-click to toggle zoom
+                </div>
               </div>
 
-              {/* Infinite Canvas */}
+              {/* Image Canvas */}
               <div
                 ref={containerRef}
-                className="relative overflow-hidden select-none"
+                className="relative overflow-hidden select-none bg-black/20"
                 style={{
                   height: '70vh',
+                  minHeight: '400px',
                   cursor: isPanning ? 'grabbing' : 'grab',
                   touchAction: 'none'
                 }}
@@ -383,59 +545,78 @@ export default function ImageDetailView({ image, onBack, onDelete, onRegenerate,
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
+                onDoubleClick={handleDoubleClick}
               >
-                {/* Subtle grid background */}
+                {/* Checkerboard background for transparency */}
                 <div
-                  className="absolute inset-0 pointer-events-none opacity-20"
+                  className="absolute inset-0 pointer-events-none opacity-10"
                   style={{
                     backgroundImage: `
-                      linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
-                      linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)
+                      linear-gradient(45deg, #333 25%, transparent 25%),
+                      linear-gradient(-45deg, #333 25%, transparent 25%),
+                      linear-gradient(45deg, transparent 75%, #333 75%),
+                      linear-gradient(-45deg, transparent 75%, #333 75%)
                     `,
-                    backgroundSize: `${20 * canvas.scale}px ${20 * canvas.scale}px`,
-                    backgroundPosition: `${canvas.position.x}px ${canvas.position.y}px`
+                    backgroundSize: '20px 20px',
+                    backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
                   }}
                 />
 
-                {/* Canvas content */}
-                <div
-                  ref={canvasRef}
-                  className="absolute"
-                  style={{
-                    left: '50%',
-                    top: '50%',
-                    transform: `translate(${canvas.position.x}px, ${canvas.position.y}px) scale(${canvas.scale})`,
-                    transformOrigin: 'center center',
-                    transition: isPanning ? 'none' : 'transform 0.1s ease-out'
-                  }}
-                >
+                {/* Canvas content - image centered and scaled */}
+                {canvas && (
                   <div
-                    className="relative"
+                    ref={canvasRef}
+                    className="absolute"
                     style={{
-                      width: '960px',
-                      height: '540px',
-                      marginLeft: '-480px',
-                      marginTop: '-270px'
+                      left: '50%',
+                      top: '50%',
+                      transform: `translate(calc(-50% + ${canvas.position.x}px), calc(-50% + ${canvas.position.y}px))`,
+                      transition: isPanning ? 'none' : 'transform 0.15s ease-out'
                     }}
                   >
-                    <Image
-                      src={currentImage.url}
-                      alt={`${currentImage.style} artwork`}
-                      fill
-                      className="object-contain rounded-lg shadow-2xl"
-                      priority
-                      draggable={false}
-                    />
+                    <div
+                      className="relative shadow-2xl"
+                      style={{
+                        width: `${IMAGE_WIDTH * canvas.scale}px`,
+                        height: `${IMAGE_HEIGHT * canvas.scale}px`,
+                      }}
+                    >
+                      <Image
+                        src={currentImage.url}
+                        alt={`${currentImage.style} artwork`}
+                        fill
+                        className="object-contain rounded-lg"
+                        priority
+                        draggable={false}
+                        sizes="100vw"
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {/* Loading state while calculating fit */}
+                {!canvas && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
               </div>
 
-              {/* Zoom level indicator */}
-              <div className="absolute bottom-4 left-4 z-10 bg-surface/80 backdrop-blur-sm rounded-lg px-2 py-1">
-                <span className="text-xs text-muted">
-                  {canvas.scale < 1 ? `${Math.round(canvas.scale * 100)}%` : `${canvas.scale.toFixed(1)}x`}
-                  {(canvas.position.x !== 0 || canvas.position.y !== 0) && ' • Panned'}
-                </span>
+              {/* Status bar */}
+              <div className="absolute bottom-4 left-4 right-4 z-10 flex items-center justify-between pointer-events-none">
+                <div className="bg-surface/90 backdrop-blur-sm rounded-lg px-3 py-1.5 shadow-lg">
+                  <span className="text-xs text-muted tabular-nums">
+                    {Math.round(currentScale * 100)}%
+                    {isAtFitScale && ' (Fit)'}
+                    {isAtActualSize && ' (Actual)'}
+                    {canvas && (canvas.position.x !== 0 || canvas.position.y !== 0) && !isAtFitScale && ' • Panned'}
+                  </span>
+                </div>
+                <div className="bg-surface/90 backdrop-blur-sm rounded-lg px-3 py-1.5 shadow-lg">
+                  <span className="text-xs text-muted">
+                    {IMAGE_WIDTH} × {IMAGE_HEIGHT}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
