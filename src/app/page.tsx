@@ -26,7 +26,6 @@ export default function Home() {
 
   const loadSavedImages = async () => {
     try {
-      // Add timestamp to bust any edge caching
       const response = await fetch(`/api/images?t=${Date.now()}`, {
         cache: 'no-store',
         headers: {
@@ -65,10 +64,8 @@ export default function Home() {
         throw new Error(data.error || 'Failed to generate image');
       }
 
-      // Image is now saved directly in generate API - use the blob URL
       if (data.image) {
         console.log('Image generated and saved:', data.image.url);
-        // Add to library immediately at the top
         setSavedImages(prev => [data.image, ...prev]);
       }
     } catch (err) {
@@ -98,10 +95,7 @@ export default function Home() {
   }, []);
 
   const handleRegenerate = useCallback(async (image: GeneratedImage) => {
-    // Close the detail view and trigger a new generation with the same style
     setSelectedImage(null);
-    // Find and select the style that matches
-    // For now, just close and let user manually regenerate
   }, []);
 
   // Show detail view if an image is selected
@@ -142,17 +136,26 @@ export default function Home() {
       {/* Main Content - 1/3 x 2/3 Layout */}
       <main className="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col lg:flex-row gap-6 h-full" style={{ minHeight: 'calc(100vh - 180px)' }}>
-          {/* Left Column - 1/3 width: Create Panel + Style Selector */}
-          <div className="w-full lg:w-1/3 flex flex-col gap-6 order-2 lg:order-1">
-            {/* Create Panel */}
-            <div className="bg-surface rounded-xl p-5 border border-border flex-shrink-0">
-              <div className="flex items-center gap-2 mb-4">
+          {/* Left Column - 1/3 width: Create Panel */}
+          <div className="w-full lg:w-1/3 xl:w-1/4 order-2 lg:order-1">
+            <div className="bg-surface rounded-xl p-5 border border-border lg:sticky lg:top-6">
+              <div className="flex items-center gap-2 mb-5">
                 <Sparkles className="w-5 h-5 text-accent" />
                 <h2 className="font-display text-lg font-semibold">Create Artwork</h2>
               </div>
 
+              {/* Style Selector - Compact Dropdown */}
+              <div className="mb-4">
+                <label className="block text-xs text-muted mb-2">Art Style</label>
+                <StyleSelector
+                  selectedStyle={selectedStyle}
+                  onSelectStyle={setSelectedStyle}
+                />
+              </div>
+
               {/* Prompt Input */}
               <div className="mb-4">
+                <label className="block text-xs text-muted mb-2">Custom Prompt (optional)</label>
                 <PromptInput
                   value={userPrompt}
                   onChange={setUserPrompt}
@@ -174,26 +177,12 @@ export default function Home() {
                 </span>
               </label>
 
-              {/* Selected Style Display */}
-              {selectedStyle && (
-                <div className="mb-4 p-3 bg-accent/10 border border-accent/30 rounded-lg">
-                  <p className="text-xs text-muted mb-1">Selected Style</p>
-                  <p className="font-medium text-foreground">{selectedStyle.name}</p>
-                </div>
-              )}
-
               {/* Generate Button */}
               <GenerateButton
                 onClick={handleGenerate}
                 isLoading={isGenerating}
                 disabled={!selectedStyle}
               />
-
-              {!selectedStyle && (
-                <p className="text-xs text-muted mt-3 text-center">
-                  Select a style below to start
-                </p>
-              )}
 
               {/* Error Display */}
               {error && (
@@ -206,23 +195,10 @@ export default function Home() {
                 </motion.div>
               )}
             </div>
-
-            {/* Style Selector */}
-            <div className="flex-1 min-h-0 overflow-hidden">
-              <h2 className="font-display text-lg font-semibold mb-3 text-foreground flex-shrink-0">
-                Choose Your Style
-              </h2>
-              <div className="h-full overflow-y-auto pb-4">
-                <StyleSelector
-                  selectedStyle={selectedStyle}
-                  onSelectStyle={setSelectedStyle}
-                />
-              </div>
-            </div>
           </div>
 
           {/* Right Column - 2/3 width: Gallery */}
-          <div className="w-full lg:w-2/3 order-1 lg:order-2">
+          <div className="w-full lg:w-2/3 xl:w-3/4 order-1 lg:order-2">
             <div className="bg-surface rounded-xl p-5 border border-border h-full" style={{ minHeight: '500px' }}>
               <ImageLibrary
                 images={savedImages}
