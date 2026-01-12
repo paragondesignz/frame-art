@@ -11,10 +11,10 @@ interface ImageLibraryProps {
   onSelectImage: (image: GeneratedImage) => void;
   onDeleteImage: (id: string) => void;
   onRefresh?: () => Promise<void>;
-  isGenerating?: boolean;
+  generatingCount?: number;
 }
 
-export default function ImageLibrary({ images, onSelectImage, onDeleteImage, onRefresh, isGenerating }: ImageLibraryProps) {
+export default function ImageLibrary({ images, onSelectImage, onDeleteImage, onRefresh, generatingCount = 0 }: ImageLibraryProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -58,24 +58,24 @@ export default function ImageLibrary({ images, onSelectImage, onDeleteImage, onR
       </div>
 
       {/* Gallery Grid */}
-      {images.length === 0 && !isGenerating ? (
+      {images.length === 0 && generatingCount === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center py-12">
           <ImageIcon className="w-12 h-12 mb-4 text-muted/30" />
           <p className="text-muted">No saved artworks yet</p>
           <p className="text-sm text-muted/60 mt-1">Generated images will appear here</p>
         </div>
-      ) : (images.length > 0 || isGenerating) && (
+      ) : (images.length > 0 || generatingCount > 0) && (
         <div className="flex-1 overflow-y-auto pr-1 -mr-1">
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3">
             <AnimatePresence>
-              {/* Generating skeleton thumbnail */}
-              {isGenerating && (
+              {/* Generating skeleton thumbnails */}
+              {Array.from({ length: generatingCount }).map((_, index) => (
                 <motion.div
-                  key="generating"
+                  key={`generating-${index}`}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: 0.2, delay: index * 0.05 }}
                   className="relative"
                 >
                   <div className="w-full aspect-video bg-surface rounded-lg overflow-hidden border border-accent/30 flex items-center justify-center">
@@ -85,7 +85,7 @@ export default function ImageLibrary({ images, onSelectImage, onDeleteImage, onR
                     </div>
                   </div>
                 </motion.div>
-              )}
+              ))}
               {images.map((image, index) => (
                 <motion.div
                   key={image.id}

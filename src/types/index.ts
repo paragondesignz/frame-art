@@ -19,6 +19,15 @@ export interface GenerateRequest {
   userPrompt?: string;
 }
 
+export interface QueuedGeneration {
+  id: string;
+  style: string;
+  userPrompt: string;
+  useTealAccent: boolean;
+  status: 'pending' | 'generating' | 'completed' | 'failed';
+  error?: string;
+}
+
 export interface GenerateResponse {
   imageBase64: string;
   prompt: string;

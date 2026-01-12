@@ -7,17 +7,22 @@ import PromptInput from '@/components/PromptInput';
 import GenerateButton from '@/components/GenerateButton';
 import ImageLibrary from '@/components/ImageLibrary';
 import ImageDetailView from '@/components/ImageDetailView';
-import { ArtStyle, GeneratedImage } from '@/types';
+import { ArtStyle, GeneratedImage, QueuedGeneration } from '@/types';
 import { Tv, Sparkles } from 'lucide-react';
+
+const MAX_QUEUE_SIZE = 4;
 
 export default function Home() {
   const [selectedStyle, setSelectedStyle] = useState<ArtStyle | null>(null);
   const [userPrompt, setUserPrompt] = useState('');
   const [useTealAccent, setUseTealAccent] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationQueue, setGenerationQueue] = useState<QueuedGeneration[]>([]);
   const [savedImages, setSavedImages] = useState<GeneratedImage[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null);
+
+  const activeGenerations = generationQueue.filter(g => g.status === 'pending' || g.status === 'generating');
+  const canQueueMore = activeGenerations.length < MAX_QUEUE_SIZE;
 
   // Load saved images on mount
   useEffect(() => {
@@ -41,20 +46,20 @@ export default function Home() {
     }
   };
 
-  const handleGenerate = async () => {
-    if (!selectedStyle) return;
-
-    setIsGenerating(true);
-    setError(null);
+  const processGeneration = useCallback(async (queueItem: QueuedGeneration) => {
+    // Mark as generating
+    setGenerationQueue(prev =>
+      prev.map(g => g.id === queueItem.id ? { ...g, status: 'generating' as const } : g)
+    );
 
     try {
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          style: selectedStyle.promptPrefix,
-          userPrompt,
-          useTealAccent,
+          style: queueItem.style,
+          userPrompt: queueItem.userPrompt,
+          useTealAccent: queueItem.useTealAccent,
         }),
       });
 
@@ -68,13 +73,42 @@ export default function Home() {
         console.log('Image generated and saved:', data.image.url);
         setSavedImages(prev => [data.image, ...prev]);
       }
+
+      // Remove from queue on success
+      setGenerationQueue(prev => prev.filter(g => g.id !== queueItem.id));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
       console.error('Generate error:', err);
-    } finally {
-      setIsGenerating(false);
+
+      // Mark as failed in queue
+      setGenerationQueue(prev =>
+        prev.map(g => g.id === queueItem.id ? { ...g, status: 'failed' as const, error: errorMessage } : g)
+      );
     }
+  }, []);
+
+  const handleGenerate = async () => {
+    if (!selectedStyle || !canQueueMore) return;
+
+    setError(null);
+
+    const newQueueItem: QueuedGeneration = {
+      id: `gen-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      style: selectedStyle.promptPrefix,
+      userPrompt,
+      useTealAccent,
+      status: 'pending',
+    };
+
+    setGenerationQueue(prev => [...prev, newQueueItem]);
+
+    // Start processing immediately
+    processGeneration(newQueueItem);
   };
+
+  const dismissQueueError = useCallback((id: string) => {
+    setGenerationQueue(prev => prev.filter(g => g.id !== id));
+  }, []);
 
   const handleSelectLibraryImage = useCallback((image: GeneratedImage) => {
     setSelectedImage(image);
@@ -164,7 +198,7 @@ export default function Home() {
                 <PromptInput
                   value={userPrompt}
                   onChange={setUserPrompt}
-                  disabled={isGenerating}
+                  disabled={false}
                 />
               </div>
 
@@ -174,7 +208,6 @@ export default function Home() {
                   type="checkbox"
                   checked={useTealAccent}
                   onChange={(e) => setUseTealAccent(e.target.checked)}
-                  disabled={isGenerating}
                   className="w-4 h-4 rounded border-border bg-surface text-teal-500 focus:ring-teal-500 focus:ring-offset-0 cursor-pointer disabled:opacity-50"
                 />
                 <span className="text-sm text-muted group-hover:text-foreground transition-colors">
@@ -185,7 +218,8 @@ export default function Home() {
               {/* Generate Button */}
               <GenerateButton
                 onClick={handleGenerate}
-                isLoading={isGenerating}
+                queueCount={activeGenerations.length}
+                maxQueue={MAX_QUEUE_SIZE}
                 disabled={!selectedStyle}
               />
 
@@ -199,6 +233,24 @@ export default function Home() {
                   {error}
                 </motion.div>
               )}
+
+              {/* Queue Errors */}
+              {generationQueue.filter(g => g.status === 'failed').map(item => (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm flex items-start justify-between gap-2"
+                >
+                  <span>{item.error || 'Generation failed'}</span>
+                  <button
+                    onClick={() => dismissQueueError(item.id)}
+                    className="text-red-400 hover:text-red-300 font-medium"
+                  >
+                    ×
+                  </button>
+                </motion.div>
+              ))}
             </div>
           </div>
 
@@ -210,7 +262,7 @@ export default function Home() {
                 onSelectImage={handleSelectLibraryImage}
                 onDeleteImage={handleDeleteImage}
                 onRefresh={loadSavedImages}
-                isGenerating={isGenerating}
+                generatingCount={activeGenerations.length}
               />
             </div>
           </div>
