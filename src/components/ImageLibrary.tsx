@@ -57,23 +57,6 @@ export default function ImageLibrary({ images, onSelectImage, onDeleteImage, onR
         )}
       </div>
 
-      {/* Generating Indicator */}
-      {isGenerating && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-          className="mb-4 flex-shrink-0"
-        >
-          <div className="aspect-video rounded-lg bg-surface border border-accent/30 flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-8 h-8 border-3 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-              <p className="text-sm text-muted">Creating...</p>
-            </div>
-          </div>
-        </motion.div>
-      )}
-
       {/* Gallery Grid */}
       {images.length === 0 && !isGenerating ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center py-12">
@@ -81,10 +64,28 @@ export default function ImageLibrary({ images, onSelectImage, onDeleteImage, onR
           <p className="text-muted">No saved artworks yet</p>
           <p className="text-sm text-muted/60 mt-1">Generated images will appear here</p>
         </div>
-      ) : (
+      ) : (images.length > 0 || isGenerating) && (
         <div className="flex-1 overflow-y-auto pr-1 -mr-1">
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3">
             <AnimatePresence>
+              {/* Generating skeleton thumbnail */}
+              {isGenerating && (
+                <motion.div
+                  key="generating"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.2 }}
+                  className="relative"
+                >
+                  <div className="w-full aspect-video bg-surface rounded-lg overflow-hidden border border-accent/30 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-1.5" />
+                      <p className="text-xs text-muted">Creating...</p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
               {images.map((image, index) => (
                 <motion.div
                   key={image.id}

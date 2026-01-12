@@ -98,6 +98,10 @@ export default function Home() {
     setSelectedImage(null);
   }, []);
 
+  const handleImageEdited = useCallback((newImage: GeneratedImage) => {
+    setSavedImages(prev => [newImage, ...prev]);
+  }, []);
+
   // Show detail view if an image is selected
   if (selectedImage) {
     return (
@@ -107,6 +111,7 @@ export default function Home() {
           onBack={() => setSelectedImage(null)}
           onDelete={handleDeleteImage}
           onRegenerate={handleRegenerate}
+          onImageEdited={handleImageEdited}
         />
       </AnimatePresence>
     );
