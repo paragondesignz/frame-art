@@ -194,7 +194,6 @@ export default function Home() {
 
               {/* Prompt Input */}
               <div className="mb-4">
-                <label className="block text-xs text-muted mb-2">Custom Prompt (optional)</label>
                 <PromptInput
                   value={userPrompt}
                   onChange={setUserPrompt}

@@ -693,9 +693,9 @@ export default function ImageDetailView({ image, onBack, onDelete, onRegenerate,
 
             {/* Image Details - Compact */}
             <div className="bg-surface rounded-xl p-4 border border-border">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted">Style</span>
-                <span className="text-foreground font-medium">{currentImage.style}</span>
+              <div className="flex items-start justify-between text-sm gap-4">
+                <span className="text-muted shrink-0">Style</span>
+                <span className="text-foreground font-medium text-right">{currentImage.style}</span>
               </div>
               <div className="flex items-center justify-between text-sm mt-2">
                 <span className="text-muted">Resolution</span>
